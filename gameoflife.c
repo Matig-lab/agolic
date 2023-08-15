@@ -209,14 +209,14 @@ void golstate_restart(GolState *gol_state) {
 
 void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
     if (grid_index < 0 || grid_index >= GRID_AREA) {
-        printf("info: cell rejected: index out of bounds (%d)\n", grid_index);
+        printf("Info: New cell addition rejected: index out of bounds (%d)\n", grid_index);
         return;
     }
     if (gol_state->grid[grid_index]) {
-        printf("info: cell rejected: there is a cell there (%d)\n", grid_index);
+        printf("Info: New cell addition rejected: there is already a cell in %d\n", grid_index);
         return;
     }
-    printf("info: new cell at %d\n", grid_index);
+    printf("Info: New cell added at grid index %d\n", grid_index);
     node_append(&gol_state->alive_cells, grid_index);
     gol_state->grid[grid_index] = true;
     gol_state->population++;
@@ -484,7 +484,7 @@ void gui_process_keyboard_events(Gui *gui_ptr, SDL_Event *e) {
         break;
     case SDLK_SPACE:
         gui_ptr->generation_running = true;
-        puts("info: step to next generation");
+        puts("Info: Proceeding to the next generation...");
         break;
     case SDLK_r:
         gui_ptr->restart = true;
@@ -502,7 +502,7 @@ void gui_process_mouse_event(Gui *gui_ptr, SDL_Event *e) {
         mouse_position.y = e->button.y;
         int mouse_in_virtual_grid =
             gui_point_to_virtual_grid_index(gui_ptr, mouse_position);
-        printf("info: mouse click (%f, %f) transformed to %d\n",
+        printf("Info: Mouse Click at (%f, %f) transformed to grid index %d\n",
                mouse_position.x, mouse_position.y, mouse_in_virtual_grid);
         golstate_arbitrary_give_birth_cell(gui_ptr->gol_state,
                                            mouse_in_virtual_grid);
@@ -541,7 +541,7 @@ void gui_update(Gui *gui_ptr) {
     if (gui_ptr->generation_running) {
         golstate_analize_generation(gui_ptr->gol_state);
         golstate_next_generation(gui_ptr->gol_state);
-        printf("info: population: %d, generation: %d\n",
+        printf("Info: Population: %d, Generation: %d\n",
                gui_ptr->gol_state->population, gui_ptr->gol_state->generation);
         gui_ptr->generation_running = false;
     }
@@ -628,8 +628,8 @@ void gui_run(Gui *gui_ptr) {
 
         if (gui_ptr->there_is_something_to_draw) {
             double render_perf = gui_get_performance(gui_render, gui_ptr);
-            printf("info: updated in %f\n", update_perf);
-            printf("info: rendered in %f\n", render_perf);
+            printf("Info: GUI updated in %f seconds\n", update_perf / 1000);
+            printf("Info: GUI rendered in %f seconds\n", render_perf / 1000);
         }
 
         // TODO: find better optimization method
