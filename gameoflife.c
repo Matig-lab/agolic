@@ -155,13 +155,38 @@ void golstate_destroy(GolState *gol_state) {
     free(gol_state);
 }
 
-void golstate_arbitrary_give_birth_cell(int grid_index) {}
+void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
+    if (grid_index < 0 || grid_index >= GRID_AREA)
+        return;
+    if (gol_state->grid[grid_index])
+        return;
+    node_insert_head(&gol_state->becoming_alive_cells, grid_index);
+}
 
-void golstate_arbitrary_kill_cell(int grid_index) {}
+void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index) {
+    if (grid_index < 0 || grid_index >= GRID_AREA)
+        return;
+    if (!gol_state->grid[grid_index])
+        return;
+    node_insert_head(&gol_state->dying_cells, grid_index);
+}
 
 void golstate_analize_state() {}
 
-void golstate_next_generation() {}
+void golstate_next_generation(GolState *gol_state) {
+    Node *current = gol_state->dying_cells;
+    while (gol_state) {
+        node_delete_by_data(&gol_state->alive_cells, current->data);
+        current = current->next;
+    }
+    node_delete_all(&gol_state->dying_cells);
+
+    current = gol_state->becoming_alive_cells;
+    while (current) {
+        node_insert_head(&gol_state->alive_cells, current->data);
+    }
+    node_delete_all(&gol_state->becoming_alive_cells);
+}
 
 typedef struct {
     SDL_Window *window;
