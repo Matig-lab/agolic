@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -18,6 +19,16 @@ Node *node_alloc(int data) {
     return new_node;
 }
 
+int node_len(Node *head) {
+    Node *current = head;
+    int len = 0;
+    while (current) {
+        len++;
+        current = current->next;
+    }
+    return len;
+}
+
 void node_append(Node **head, int data) {
     Node *new_node = node_alloc(data);
     if (!*head) {
@@ -27,12 +38,15 @@ void node_append(Node **head, int data) {
 
     Node *current = *head;
     while (current->next) {
+        if (current->data == data)
+            return;
         current = current->next;
     }
     current->next = new_node;
 }
 
 void node_insert_head(Node **head, int data) {
+    assert(false && "Do nat use node_insert_head, must be reviewed");
     Node *new_node = node_alloc(data);
     if (!*head) {
         *head = new_node;
@@ -41,6 +55,22 @@ void node_insert_head(Node **head, int data) {
 
     new_node->next = (*head);
     *head = new_node;
+}
+
+void node_concat(Node *head, Node **tail) {
+    if (!tail)
+        return;
+    if (!head) {
+        head = *tail;
+        return;
+    }
+
+    Node *current = head;
+    while (current->next) {
+        current = current->next;
+    }
+    current->next = *tail;
+    *tail = NULL;
 }
 
 void node_delete_by_index(Node **head, int index) {
@@ -239,6 +269,27 @@ bool golstate_dead_cell_becomes_alive(GolState *gol_state, int cell_index) {
     return life_in_neighborhood >= MIN_CELLS_TO_PRODUCE_LIFE;
 }
 
+void golstate_cleanup(GolState *gol_state) {
+    Node *current = gol_state->alive_cells;
+    Node *prev = NULL;
+
+    while (current) {
+        if (!gol_state->grid[current->data]) {
+            Node *tmp = current;
+            if (prev) {
+                prev->next = current->next;
+            } else {
+                gol_state->alive_cells = current->next;
+            }
+            current = current->next;
+            free(tmp);
+        } else {
+            prev = current;
+            current = current->next;
+        }
+    }
+}
+
 void golstate_analize_generation(GolState *gol_state) {
     // Analize current cell
     Node *current_cell = gol_state->alive_cells;
@@ -247,8 +298,9 @@ void golstate_analize_generation(GolState *gol_state) {
         Node *neighborhood =
             golstate_neighboring_cells_index_list(current_cell->data);
         if (!golstate_cell_stays_alive(gol_state, current_cell->data,
-                                       neighborhood))
+                                       neighborhood)) {
             node_append(&gol_state->dying_cells, current_cell->data);
+        }
 
         // Analize each dead cells in neighborhood
         Node *current_neighborhood_cell = neighborhood;
@@ -275,7 +327,6 @@ void golstate_next_generation(GolState *gol_state) {
         return;
     Node *current = gol_state->dying_cells;
     while (current) {
-        node_delete_by_data(&gol_state->alive_cells, current->data);
         gol_state->grid[current->data] = false;
         gol_state->population--;
         current = current->next;
@@ -284,12 +335,14 @@ void golstate_next_generation(GolState *gol_state) {
 
     current = gol_state->becoming_alive_cells;
     while (current) {
-        node_insert_head(&gol_state->alive_cells, current->data);
         gol_state->grid[current->data] = true;
         gol_state->population++;
         current = current->next;
     }
+    node_concat(gol_state->alive_cells, &gol_state->becoming_alive_cells);
     node_delete_all(&gol_state->becoming_alive_cells);
+    golstate_cleanup(gol_state);
+    gol_state->generation++;
     gol_state->generation_analized = false;
 }
 
@@ -446,6 +499,8 @@ void gui_update(Gui *gui_ptr) {
     if (gui_ptr->generation_running) {
         golstate_analize_generation(gui_ptr->gol_state);
         golstate_next_generation(gui_ptr->gol_state);
+        printf("info: population: %d, generation: %d\n",
+               gui_ptr->gol_state->population, gui_ptr->gol_state->generation);
         gui_ptr->generation_running = false;
     }
 }
