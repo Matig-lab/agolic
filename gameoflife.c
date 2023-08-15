@@ -209,11 +209,14 @@ void golstate_restart(GolState *gol_state) {
 
 void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
     if (grid_index < 0 || grid_index >= GRID_AREA) {
-        printf("Info: New cell addition rejected: index out of bounds (%d)\n", grid_index);
+        printf("Info: New cell addition rejected: index out of bounds (%d)\n",
+               grid_index);
         return;
     }
     if (gol_state->grid[grid_index]) {
-        printf("Info: New cell addition rejected: there is already a cell in %d\n", grid_index);
+        printf(
+            "Info: New cell addition rejected: there is already a cell in %d\n",
+            grid_index);
         return;
     }
     printf("Info: New cell added at grid index %d\n", grid_index);
@@ -374,7 +377,8 @@ typedef struct {
     SDL_Window *window;
     int window_width, window_height;
     SDL_Renderer *renderer;
-    bool running, there_is_something_to_draw, generation_running, restart;
+    bool running, there_is_something_to_draw, generation_running, restart,
+        center_grid;
     float current_zoom;
     Point view_position;
     GolState *gol_state;
@@ -414,6 +418,7 @@ Gui *gui_alloc() {
     SDL_RenderClear(new_gui->renderer);
 
     new_gui->running = true;
+    new_gui->center_grid = true;
     new_gui->generation_running = false;
     new_gui->restart = false;
     new_gui->current_zoom = 1.f;
@@ -441,8 +446,16 @@ double gui_get_performance(void (*run)(Gui *), Gui *gui_ptr) {
     start = clock();
     (*run)(gui_ptr);
     end = clock();
-    time_elapsed = (double) end - start;
+    time_elapsed = (double)end - start;
     return time_elapsed;
+}
+
+void gui_center_grid(Gui *gui) {
+    float grid_width = CELL_WIDTH_BASE * gui->current_zoom * GRID_LINE_LEN;
+    int x_offset = (gui->window_width - grid_width) / 2;
+    int y_offset = (gui->window_height - grid_width) / 2;
+    gui->view_position.x = x_offset;
+    gui->view_position.y = y_offset;
 }
 
 int gui_point_to_virtual_grid_index(Gui *gui_ptr, Point gui_point) {
@@ -488,6 +501,10 @@ void gui_process_keyboard_events(Gui *gui_ptr, SDL_Event *e) {
         break;
     case SDLK_r:
         gui_ptr->restart = true;
+        break;
+    case SDLK_c:
+        gui_ptr->center_grid = true;
+        puts("Info: Centering grid...");
         break;
     default:
         break;
@@ -537,6 +554,10 @@ void gui_update(Gui *gui_ptr) {
     if (gui_ptr->restart) {
         golstate_restart(gui_ptr->gol_state);
         gui_ptr->restart = false;
+    }
+    if (gui_ptr->center_grid) {
+        gui_center_grid(gui_ptr);
+        gui_ptr->center_grid = false;
     }
     if (gui_ptr->generation_running) {
         golstate_analize_generation(gui_ptr->gol_state);
