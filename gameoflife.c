@@ -135,6 +135,9 @@ typedef struct {
     bool generation_analized;
 } GolState;
 
+#define MIN_CELLS_TO_NOT_BE_ISOLATED 2
+#define MAX_CELLS_TO_NOT_BE_OVERPOPULATED 3
+#define MIN_CELLS_TO_PRODUCE_LIFE 3
 GolState *golstate_alloc() {
     GolState *gol_state = malloc(sizeof(*gol_state));
     gol_state->grid = malloc(sizeof(bool) * GRID_AREA);
@@ -170,6 +173,7 @@ void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
     printf("info: new cell at %d\n", grid_index);
     node_append(&gol_state->alive_cells, grid_index);
     gol_state->grid[grid_index] = true;
+    gol_state->population++;
 }
 
 void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index) {
@@ -180,12 +184,83 @@ void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index) {
     node_append(&gol_state->dying_cells, grid_index);
 }
 
-void golstate_analize_state() {}
+Node *golstate_neighboring_cells_index_list(int neighborhood_center) {
+    if (neighborhood_center < 0 || neighborhood_center >= GRID_AREA)
+        return NULL;
+
+    Node *head = NULL;
+    int neighborhood_start = neighborhood_center - (GRID_SIDE - 1);
+    int neighborhood_end = neighborhood_center + (GRID_SIDE + 1);
+    int neighborhood_end_of_first_line = neighborhood_center - (GRID_AREA + 1);
+    int neighborhood_end_of_second_line = neighborhood_center + 1;
+    int jump_to_start_of_nextline = GRID_SIDE - 2;
+
+    for (int i = neighborhood_start; i <= neighborhood_end; i++) {
+        if (neighborhood_center < 0 || i == neighborhood_center)
+            continue;
+        if (i > GRID_AREA)
+            break;
+        if (i == neighborhood_end_of_first_line ||
+            i == neighborhood_end_of_second_line)
+            i += jump_to_start_of_nextline;
+        node_append(&head, i);
+    }
+    return head;
+}
+
+int golstate_sum_of_neighborhood_lives(GolState *gol_state,
+                                       Node *cell_neighborhood) {
+    int sum = 0;
+    Node *current_cell = cell_neighborhood;
+    while (current_cell) {
+        if (gol_state->grid[current_cell->data])
+            sum++;
+        current_cell = current_cell->next;
+    }
+    return sum;
+}
+
+void golstate_analize_state(GolState *gol_state) {
+    // Analize current cell
+    Node *current_cell = gol_state->alive_cells;
+    while (current_cell) {
+        Node *current_cell_neighborhood =
+            golstate_neighboring_cells_index_list(current_cell->data);
+        int life_in_neighborhood = golstate_sum_of_neighborhood_lives(
+            gol_state, current_cell_neighborhood);
+        if (life_in_neighborhood < MIN_CELLS_TO_NOT_BE_ISOLATED ||
+            life_in_neighborhood > MAX_CELLS_TO_NOT_BE_OVERPOPULATED) {
+            node_append(&gol_state->dying_cells, current_cell->data);
+        }
+        Node *current_neighboring_cell = current_cell_neighborhood;
+
+        // Analize each dead cells in neighborhood
+        while (current_neighboring_cell) {
+            if (gol_state->grid[current_neighboring_cell->data])
+                continue;
+            Node *current_neighboring_cell_neighborhood =
+                golstate_neighboring_cells_index_list(current_neighboring_cell->data);
+            int life_in_neghboring_neighborhood =
+                golstate_sum_of_neighborhood_lives(
+                    gol_state, current_neighboring_cell_neighborhood);
+            if (life_in_neghboring_neighborhood >= MIN_CELLS_TO_PRODUCE_LIFE) {
+                node_append(&gol_state->becoming_alive_cells,
+                            current_neighboring_cell->data);
+            }
+            current_neighboring_cell = current_neighboring_cell->next;
+        }
+        current_cell = current_cell->next;
+    }
+    gol_state->generation_analized = true;
+}
 
 void golstate_next_generation(GolState *gol_state) {
+    if (!gol_state->generation_analized)
+        return;
     Node *current = gol_state->dying_cells;
     while (current) {
         node_delete_by_data(&gol_state->alive_cells, current->data);
+        gol_state->population--;
         current = current->next;
     }
     node_delete_all(&gol_state->dying_cells);
@@ -193,6 +268,8 @@ void golstate_next_generation(GolState *gol_state) {
     current = gol_state->becoming_alive_cells;
     while (current) {
         node_insert_head(&gol_state->alive_cells, current->data);
+        gol_state->population--;
+        current = current->next;
     }
     node_delete_all(&gol_state->becoming_alive_cells);
 }
