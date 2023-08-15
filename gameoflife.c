@@ -121,8 +121,8 @@ Point grid_index_to_point(int grid_index) {
     Point p = {-1, -1};
     if (grid_index < 0 || grid_index >= GRID_AREA)
         return p;
-    p.y = (float)roundf((float)grid_index / GRID_SIDE);
-    p.x = (float)roundf((grid_index % GRID_SIDE));
+    p.y = (float)floorf((float)grid_index / GRID_SIDE);
+    p.x = (float)floorf((grid_index % GRID_SIDE));
     return p;
 }
 
@@ -137,7 +137,10 @@ typedef struct {
 
 GolState *golstate_alloc() {
     GolState *gol_state = malloc(sizeof(*gol_state));
-    gol_state->grid = calloc(false, sizeof(bool) * GRID_AREA);
+    gol_state->grid = malloc(sizeof(bool) * GRID_AREA);
+    for (int i = 0; i < GRID_AREA; i++) {
+        gol_state->grid[i] = false;
+    }
     gol_state->alive_cells = NULL;
     gol_state->dying_cells = NULL;
     gol_state->becoming_alive_cells = NULL;
@@ -156,11 +159,17 @@ void golstate_destroy(GolState *gol_state) {
 }
 
 void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
-    if (grid_index < 0 || grid_index >= GRID_AREA)
+    if (grid_index < 0 || grid_index >= GRID_AREA) {
+        printf("info: cell rejected: index out of bounds (%d)\n", grid_index);
         return;
-    if (gol_state->grid[grid_index])
+    }
+    if (gol_state->grid[grid_index]) {
+        printf("info: cell rejected: there is a cell there (%d)\n", grid_index);
         return;
-    node_insert_head(&gol_state->becoming_alive_cells, grid_index);
+    }
+    printf("info: new cell at %d\n", grid_index);
+    node_append(&gol_state->alive_cells, grid_index);
+    gol_state->grid[grid_index] = true;
 }
 
 void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index) {
@@ -168,14 +177,14 @@ void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index) {
         return;
     if (!gol_state->grid[grid_index])
         return;
-    node_insert_head(&gol_state->dying_cells, grid_index);
+    node_append(&gol_state->dying_cells, grid_index);
 }
 
 void golstate_analize_state() {}
 
 void golstate_next_generation(GolState *gol_state) {
     Node *current = gol_state->dying_cells;
-    while (gol_state) {
+    while (current) {
         node_delete_by_data(&gol_state->alive_cells, current->data);
         current = current->next;
     }
@@ -251,6 +260,17 @@ void gui_destroy(Gui *gui_ptr) {
     free(gui_ptr);
 }
 
+int gui_point_to_virtual_grid_index(Gui *gui_ptr, Point gui_point) {
+    gui_point.x -= gui_ptr->view_position.x;
+    gui_point.x -= fmod(gui_point.x, CELL_WIDTH_BASE * gui_ptr->current_zoom);
+    gui_point.y -= gui_ptr->view_position.y;
+    gui_point.y -= fmod(gui_point.y, CELL_WIDTH_BASE * gui_ptr->current_zoom);
+
+    int grid_index = (gui_point.y / CELL_WIDTH_BASE) * GRID_SIDE;
+    grid_index += gui_point.x / (CELL_WIDTH_BASE * gui_ptr->current_zoom);
+    return grid_index;
+}
+
 void gui_process_keyboard_events(Gui *gui_ptr, SDL_Event *e) {
     switch (e->key.keysym.sym) {
     case SDLK_ESCAPE:
@@ -288,7 +308,13 @@ void gui_process_mouse_event(Gui *gui_ptr, SDL_Event *e) {
     case SDL_BUTTON_LEFT:
         mouse_position.x = e->button.x;
         mouse_position.y = e->button.y;
-        // TODO: add new cell to grid
+        int mouse_in_virtual_grid =
+            gui_point_to_virtual_grid_index(gui_ptr, mouse_position);
+        printf("info: mouse click (%f, %f) transformed to %d\n",
+               mouse_position.x, mouse_position.y, mouse_in_virtual_grid);
+        golstate_arbitrary_give_birth_cell(gui_ptr->gol_state,
+                                           mouse_in_virtual_grid);
+        gui_ptr->there_is_something_to_draw = true;
         break;
     default:
         break;
@@ -362,15 +388,12 @@ void gui_render(Gui *gui_ptr) {
     SDL_RenderClear(gui_ptr->renderer);
     gui_draw_grid(gui_ptr);
 
-    Point p1 = grid_index_to_point(0);
-    Point p2 = grid_index_to_point(9);
-    Point p3 = grid_index_to_point(99);
-    Point p4 = grid_index_to_point(90);
-
-    gui_draw_cell(gui_ptr, p1);
-    gui_draw_cell(gui_ptr, p2);
-    gui_draw_cell(gui_ptr, p3);
-    gui_draw_cell(gui_ptr, p4);
+    Node *current = gui_ptr->gol_state->alive_cells;
+    while (current) {
+        Point gui_point = grid_index_to_point(current->data);
+        gui_draw_cell(gui_ptr, gui_point);
+        current = current->next;
+    }
 
     SDL_RenderPresent(gui_ptr->renderer);
     gui_ptr->there_is_something_to_draw = false;
