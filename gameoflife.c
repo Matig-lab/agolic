@@ -583,12 +583,13 @@ void gui_draw_cell(Gui *gui_ptr, Point position) {
     if (cell.position.y > gui_ptr->view_position.y + gui_ptr->window_height)
         return;
 
+    SDL_Rect rect;
+    rect.x = (int)cell.position.x;
+    rect.y = (int)cell.position.y;
+    rect.w = rect.h = (int)cell.side;
+
     SDL_SetRenderDrawColor(gui_ptr->renderer, 255, 255, 255, 255);
-    for (float i = cell.position.x; i < cell.position.x + cell.side;
-         i += .01f) {
-        SDL_RenderDrawLineF(gui_ptr->renderer, i, cell.position.y, i,
-                            cell.position.y + cell.side);
-    }
+    SDL_RenderFillRect(gui_ptr->renderer, &rect);
 }
 
 void gui_render(Gui *gui_ptr) {
