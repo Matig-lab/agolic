@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 typedef struct Node Node;
 struct Node {
@@ -434,6 +435,16 @@ void gui_destroy(Gui *gui_ptr) {
     free(gui_ptr);
 }
 
+double gui_get_performance(void (*run)(Gui *), Gui *gui_ptr) {
+    clock_t start, end;
+    double time_elapsed = 0;
+    start = clock();
+    (*run)(gui_ptr);
+    end = clock();
+    time_elapsed = (double) end - start;
+    return time_elapsed;
+}
+
 int gui_point_to_virtual_grid_index(Gui *gui_ptr, Point gui_point) {
     gui_point.x -= gui_ptr->view_position.x;
     gui_point.x -= fmod(gui_point.x, CELL_WIDTH_BASE * gui_ptr->current_zoom);
@@ -603,6 +614,7 @@ void gui_run(Gui *gui_ptr) {
 
     uint32_t current_time = SDL_GetTicks();
     uint32_t last_frame_time = current_time;
+    double cpu_time_elapsed;
     while (gui_ptr->running) {
 
         current_time = SDL_GetTicks();
@@ -611,10 +623,13 @@ void gui_run(Gui *gui_ptr) {
             continue;
 
         gui_process_events(gui_ptr);
-        gui_update(gui_ptr);
+        double update_perf = gui_get_performance(gui_update, gui_ptr);
 
-        if (gui_ptr->there_is_something_to_draw)
-            gui_render(gui_ptr);
+        if (gui_ptr->there_is_something_to_draw) {
+            double render_perf = gui_get_performance(gui_render, gui_ptr);
+            printf("info: updated in %f\n", update_perf);
+            printf("info: rendered in %f\n", render_perf);
+        }
 
         // TODO: find better optimization method
         SDL_Delay(10);
