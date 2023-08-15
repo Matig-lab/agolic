@@ -191,6 +191,17 @@ void golstate_destroy(GolState *gol_state) {
     free(gol_state);
 }
 
+void golstate_restart(GolState *gol_state) {
+    node_delete_all(&gol_state->alive_cells);
+    node_delete_all(&gol_state->becoming_alive_cells);
+    node_delete_all(&gol_state->dying_cells);
+    gol_state->population = 0;
+    gol_state->generation = 0;
+    for (int i = 0; i < GRID_AREA; i++) {
+        gol_state->grid[i] = false;
+    }
+}
+
 void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
     if (grid_index < 0 || grid_index >= GRID_AREA) {
         printf("info: cell rejected: index out of bounds (%d)\n", grid_index);
@@ -350,7 +361,7 @@ typedef struct {
     SDL_Window *window;
     int window_width, window_height;
     SDL_Renderer *renderer;
-    bool running, there_is_something_to_draw, generation_running;
+    bool running, there_is_something_to_draw, generation_running, restart;
     float current_zoom;
     Point view_position;
     GolState *gol_state;
@@ -391,6 +402,7 @@ Gui *gui_alloc() {
 
     new_gui->running = true;
     new_gui->generation_running = false;
+    new_gui->restart = false;
     new_gui->current_zoom = 1.f;
     new_gui->view_position.x = 0;
     new_gui->view_position.y = 0;
@@ -451,6 +463,9 @@ void gui_process_keyboard_events(Gui *gui_ptr, SDL_Event *e) {
         gui_ptr->generation_running = true;
         puts("info: step to next generation");
         break;
+    case SDLK_r:
+        gui_ptr->restart = true;
+        break;
     default:
         break;
     }
@@ -496,6 +511,10 @@ void gui_process_events(Gui *gui_ptr) {
 }
 
 void gui_update(Gui *gui_ptr) {
+    if (gui_ptr->restart) {
+        golstate_restart(gui_ptr->gol_state);
+        gui_ptr->restart = false;
+    }
     if (gui_ptr->generation_running) {
         golstate_analize_generation(gui_ptr->gol_state);
         golstate_next_generation(gui_ptr->gol_state);
