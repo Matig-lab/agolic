@@ -158,6 +158,7 @@ Point grid_index_to_point(int grid_index) {
 
 typedef struct {
     bool *grid;
+    bool *analized_cells;
     Node *alive_cells;
     Node *dying_cells;
     Node *becoming_alive_cells;
@@ -171,8 +172,10 @@ typedef struct {
 GolState *golstate_alloc() {
     GolState *gol_state = malloc(sizeof(*gol_state));
     gol_state->grid = malloc(sizeof(bool) * GRID_AREA);
+    gol_state->analized_cells = malloc(sizeof(bool) * GRID_AREA);
     for (int i = 0; i < GRID_AREA; i++) {
         gol_state->grid[i] = false;
+        gol_state->analized_cells[i] = false;
     }
     gol_state->alive_cells = NULL;
     gol_state->dying_cells = NULL;
@@ -199,6 +202,7 @@ void golstate_restart(GolState *gol_state) {
     gol_state->generation = 0;
     for (int i = 0; i < GRID_AREA; i++) {
         gol_state->grid[i] = false;
+        gol_state->analized_cells[i] = false;
     }
 }
 
@@ -284,6 +288,10 @@ void golstate_cleanup(GolState *gol_state) {
     Node *current = gol_state->alive_cells;
     Node *prev = NULL;
 
+    for (int i = 0; i < GRID_AREA; i++) {
+        gol_state->analized_cells[i] = false;
+    }
+
     while (current) {
         if (!gol_state->grid[current->data]) {
             Node *tmp = current;
@@ -316,15 +324,19 @@ void golstate_analize_generation(GolState *gol_state) {
         // Analize each dead cells in neighborhood
         Node *current_neighborhood_cell = neighborhood;
         while (current_neighborhood_cell) {
-            if (gol_state->grid[current_neighborhood_cell->data]) {
+            if (gol_state->grid[current_neighborhood_cell->data] ||
+                gol_state->analized_cells[current_neighborhood_cell->data]) {
                 current_neighborhood_cell = current_neighborhood_cell->next;
                 continue;
             }
 
             if (golstate_dead_cell_becomes_alive(
-                    gol_state, current_neighborhood_cell->data))
+                    gol_state, current_neighborhood_cell->data)) {
                 node_append(&gol_state->becoming_alive_cells,
                             current_neighborhood_cell->data);
+                gol_state->analized_cells[current_neighborhood_cell->data] =
+                    true;
+            }
 
             current_neighborhood_cell = current_neighborhood_cell->next;
         }
