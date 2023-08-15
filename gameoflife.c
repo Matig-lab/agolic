@@ -133,7 +133,7 @@ void node_delete_all(Node **head) {
     *head = NULL;
 }
 
-#define GRID_LINE_LEN 20
+#define GRID_LINE_LEN 30
 #define GRID_AREA pow(GRID_LINE_LEN, 2)
 typedef struct {
     float x, y;
@@ -169,7 +169,7 @@ typedef struct {
 
 #define MIN_CELLS_TO_NOT_BE_ISOLATED 2
 #define MAX_CELLS_TO_NOT_BE_OVERPOPULATED 3
-#define MIN_CELLS_TO_PRODUCE_LIFE 3
+#define CELLS_TO_PRODUCE_LIFE 3
 GolState *golstate_alloc() {
     GolState *gol_state = malloc(sizeof(*gol_state));
     gol_state->grid = malloc(sizeof(bool) * GRID_AREA);
@@ -285,7 +285,7 @@ bool golstate_dead_cell_becomes_alive(GolState *gol_state, int cell_index) {
     Node *neighborhood = golstate_neighboring_cells_index_list(cell_index);
     int life_in_neighborhood =
         golstate_sum_of_neighborhood_lifes(gol_state, neighborhood);
-    return life_in_neighborhood >= MIN_CELLS_TO_PRODUCE_LIFE;
+    return life_in_neighborhood == CELLS_TO_PRODUCE_LIFE;
 }
 
 void golstate_cleanup(GolState *gol_state) {
