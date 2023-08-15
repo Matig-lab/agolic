@@ -102,15 +102,15 @@ void node_delete_all(Node **head) {
     *head = NULL;
 }
 
-#define GRID_SIDE 20
-#define GRID_AREA pow(GRID_SIDE, 2)
+#define GRID_LINE_LEN 20
+#define GRID_AREA pow(GRID_LINE_LEN, 2)
 typedef struct {
     float x, y;
 } Point;
 
 int point_to_grid_index(Point p) {
     int index = 0;
-    index = GRID_SIDE * p.y;
+    index = GRID_LINE_LEN * p.y;
     index += p.x;
     if (index < 0 || index < GRID_AREA)
         return -1;
@@ -121,8 +121,8 @@ Point grid_index_to_point(int grid_index) {
     Point p = {-1, -1};
     if (grid_index < 0 || grid_index >= GRID_AREA)
         return p;
-    p.y = (float)floorf((float)grid_index / GRID_SIDE);
-    p.x = (float)floorf((grid_index % GRID_SIDE));
+    p.y = (float)floorf((float)grid_index / GRID_LINE_LEN);
+    p.x = (float)floorf((grid_index % GRID_LINE_LEN));
     return p;
 }
 
@@ -189,26 +189,29 @@ Node *golstate_neighboring_cells_index_list(int neighborhood_center) {
         return NULL;
 
     Node *head = NULL;
-    int neighborhood_start = neighborhood_center - (GRID_SIDE - 1);
-    int neighborhood_end = neighborhood_center + (GRID_SIDE + 1);
-    int neighborhood_end_of_first_line = neighborhood_center - (GRID_AREA + 1);
-    int neighborhood_end_of_second_line = neighborhood_center + 1;
-    int jump_to_start_of_nextline = GRID_SIDE - 2;
+    int neighborhood_start = neighborhood_center - (GRID_LINE_LEN + 1);
+    int neighborhood_end = neighborhood_center + (GRID_LINE_LEN + 1);
+    int neighborhood_end_of_first_line =
+        neighborhood_center - (GRID_LINE_LEN - 2);
+    int neighborhood_end_of_second_line = neighborhood_center + 2;
+    int jump_to_start_of_nextline = GRID_LINE_LEN - 4;
 
     for (int i = neighborhood_start; i <= neighborhood_end; i++) {
-        if (neighborhood_center < 0 || i == neighborhood_center)
+        if (i < 0 || i == neighborhood_center)
             continue;
-        if (i > GRID_AREA)
+        if (i >= GRID_AREA)
             break;
         if (i == neighborhood_end_of_first_line ||
-            i == neighborhood_end_of_second_line)
+            i == neighborhood_end_of_second_line) {
             i += jump_to_start_of_nextline;
+            continue;
+        }
         node_append(&head, i);
     }
     return head;
 }
 
-int golstate_sum_of_neighborhood_lives(GolState *gol_state,
+int golstate_sum_of_neighborhood_lifes(GolState *gol_state,
                                        Node *cell_neighborhood) {
     int sum = 0;
     Node *current_cell = cell_neighborhood;
@@ -220,34 +223,47 @@ int golstate_sum_of_neighborhood_lives(GolState *gol_state,
     return sum;
 }
 
-void golstate_analize_state(GolState *gol_state) {
+bool golstate_cell_stays_alive(GolState *gol_state, int cell_index,
+                               Node *cell_neighborhood) {
+    int life_in_neighborhood =
+        golstate_sum_of_neighborhood_lifes(gol_state, cell_neighborhood);
+    return life_in_neighborhood >= MIN_CELLS_TO_NOT_BE_ISOLATED &&
+           life_in_neighborhood <= MAX_CELLS_TO_NOT_BE_OVERPOPULATED;
+}
+
+bool golstate_dead_cell_becomes_alive(GolState *gol_state, int cell_index) {
+
+    Node *neighborhood = golstate_neighboring_cells_index_list(cell_index);
+    int life_in_neighborhood =
+        golstate_sum_of_neighborhood_lifes(gol_state, neighborhood);
+    return life_in_neighborhood >= MIN_CELLS_TO_PRODUCE_LIFE;
+}
+
+void golstate_analize_generation(GolState *gol_state) {
     // Analize current cell
     Node *current_cell = gol_state->alive_cells;
     while (current_cell) {
-        Node *current_cell_neighborhood =
+
+        Node *neighborhood =
             golstate_neighboring_cells_index_list(current_cell->data);
-        int life_in_neighborhood = golstate_sum_of_neighborhood_lives(
-            gol_state, current_cell_neighborhood);
-        if (life_in_neighborhood < MIN_CELLS_TO_NOT_BE_ISOLATED ||
-            life_in_neighborhood > MAX_CELLS_TO_NOT_BE_OVERPOPULATED) {
+        if (!golstate_cell_stays_alive(gol_state, current_cell->data,
+                                       neighborhood))
             node_append(&gol_state->dying_cells, current_cell->data);
-        }
-        Node *current_neighboring_cell = current_cell_neighborhood;
 
         // Analize each dead cells in neighborhood
-        while (current_neighboring_cell) {
-            if (gol_state->grid[current_neighboring_cell->data])
+        Node *current_neighborhood_cell = neighborhood;
+        while (current_neighborhood_cell) {
+            if (gol_state->grid[current_neighborhood_cell->data]) {
+                current_neighborhood_cell = current_neighborhood_cell->next;
                 continue;
-            Node *current_neighboring_cell_neighborhood =
-                golstate_neighboring_cells_index_list(current_neighboring_cell->data);
-            int life_in_neghboring_neighborhood =
-                golstate_sum_of_neighborhood_lives(
-                    gol_state, current_neighboring_cell_neighborhood);
-            if (life_in_neghboring_neighborhood >= MIN_CELLS_TO_PRODUCE_LIFE) {
-                node_append(&gol_state->becoming_alive_cells,
-                            current_neighboring_cell->data);
             }
-            current_neighboring_cell = current_neighboring_cell->next;
+
+            if (golstate_dead_cell_becomes_alive(
+                    gol_state, current_neighborhood_cell->data))
+                node_append(&gol_state->becoming_alive_cells,
+                            current_neighborhood_cell->data);
+
+            current_neighborhood_cell = current_neighborhood_cell->next;
         }
         current_cell = current_cell->next;
     }
@@ -260,6 +276,7 @@ void golstate_next_generation(GolState *gol_state) {
     Node *current = gol_state->dying_cells;
     while (current) {
         node_delete_by_data(&gol_state->alive_cells, current->data);
+        gol_state->grid[current->data] = false;
         gol_state->population--;
         current = current->next;
     }
@@ -268,17 +285,19 @@ void golstate_next_generation(GolState *gol_state) {
     current = gol_state->becoming_alive_cells;
     while (current) {
         node_insert_head(&gol_state->alive_cells, current->data);
-        gol_state->population--;
+        gol_state->grid[current->data] = true;
+        gol_state->population++;
         current = current->next;
     }
     node_delete_all(&gol_state->becoming_alive_cells);
+    gol_state->generation_analized = false;
 }
 
 typedef struct {
     SDL_Window *window;
     int window_width, window_height;
     SDL_Renderer *renderer;
-    bool running, there_is_something_to_draw;
+    bool running, there_is_something_to_draw, generation_running;
     float current_zoom;
     Point view_position;
     GolState *gol_state;
@@ -318,6 +337,7 @@ Gui *gui_alloc() {
     SDL_RenderClear(new_gui->renderer);
 
     new_gui->running = true;
+    new_gui->generation_running = false;
     new_gui->current_zoom = 1.f;
     new_gui->view_position.x = 0;
     new_gui->view_position.y = 0;
@@ -343,7 +363,7 @@ int gui_point_to_virtual_grid_index(Gui *gui_ptr, Point gui_point) {
     gui_point.y -= gui_ptr->view_position.y;
     gui_point.y -= fmod(gui_point.y, CELL_WIDTH_BASE * gui_ptr->current_zoom);
 
-    int grid_index = (gui_point.y / CELL_WIDTH_BASE) * GRID_SIDE;
+    int grid_index = (gui_point.y / CELL_WIDTH_BASE) * GRID_LINE_LEN;
     grid_index += gui_point.x / (CELL_WIDTH_BASE * gui_ptr->current_zoom);
     return grid_index;
 }
@@ -373,6 +393,10 @@ void gui_process_keyboard_events(Gui *gui_ptr, SDL_Event *e) {
         break;
     case SDLK_LEFT:
         gui_ptr->view_position.x += MOVEMENT_FACTOR;
+        break;
+    case SDLK_SPACE:
+        gui_ptr->generation_running = true;
+        puts("info: step to next generation");
         break;
     default:
         break;
@@ -418,6 +442,14 @@ void gui_process_events(Gui *gui_ptr) {
     }
 }
 
+void gui_update(Gui *gui_ptr) {
+    if (gui_ptr->generation_running) {
+        golstate_analize_generation(gui_ptr->gol_state);
+        golstate_next_generation(gui_ptr->gol_state);
+        gui_ptr->generation_running = false;
+    }
+}
+
 void gui_draw_grid(Gui *gui_ptr) {
     float final_cell_width = CELL_WIDTH_BASE * gui_ptr->current_zoom;
     SDL_SetRenderDrawColor(gui_ptr->renderer, 20, 20, 20, 255);
@@ -425,12 +457,14 @@ void gui_draw_grid(Gui *gui_ptr) {
     float start_x = fmax(0, gui_ptr->view_position.x);
     float start_y = fmax(0, gui_ptr->view_position.y);
 
-    float end_x = fmin(gui_ptr->window_width,
-                       GRID_SIDE * (CELL_WIDTH_BASE * gui_ptr->current_zoom) +
-                           gui_ptr->view_position.x);
-    float end_y = fmin(gui_ptr->window_height,
-                       GRID_SIDE * (CELL_WIDTH_BASE * gui_ptr->current_zoom) +
-                           gui_ptr->view_position.y);
+    float end_x =
+        fmin(gui_ptr->window_width,
+             GRID_LINE_LEN * (CELL_WIDTH_BASE * gui_ptr->current_zoom) +
+                 gui_ptr->view_position.x);
+    float end_y =
+        fmin(gui_ptr->window_height,
+             GRID_LINE_LEN * (CELL_WIDTH_BASE * gui_ptr->current_zoom) +
+                 gui_ptr->view_position.y);
 
     for (float x = start_x; x <= end_x; x += final_cell_width) {
         SDL_RenderDrawLineF(gui_ptr->renderer, x, start_y, x, end_y);
@@ -491,7 +525,7 @@ void gui_run(Gui *gui_ptr) {
             continue;
 
         gui_process_events(gui_ptr);
-        // Gui_update(gui_ptr);
+        gui_update(gui_ptr);
 
         if (gui_ptr->there_is_something_to_draw)
             gui_render(gui_ptr);
