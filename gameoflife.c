@@ -501,6 +501,7 @@ void gui_process_keyboard_events(Gui *gui_ptr, SDL_Event *e) {
         break;
     case SDLK_r:
         gui_ptr->restart = true;
+        puts("Info: Restarting...");
         break;
     case SDLK_c:
         gui_ptr->center_grid = true;
