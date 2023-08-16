@@ -50,7 +50,7 @@ void node_append(Node **head, int data) {
 }
 
 void node_insert_head(Node **head, int data) {
-    assert(false && "Do nat use node_insert_head, must be reviewed");
+    assert(false && "Do not use node_insert_head, must be reviewed");
     Node *new_node = node_alloc(data);
     if (!*head) {
         *head = new_node;
