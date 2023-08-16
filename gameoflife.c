@@ -133,7 +133,7 @@ void node_delete_all(Node **head) {
     *head = NULL;
 }
 
-#define GRID_LINE_LEN 30
+#define GRID_LINE_LEN 50
 #define GRID_AREA pow(GRID_LINE_LEN, 2)
 typedef struct {
     float x, y;
@@ -640,20 +640,18 @@ void gui_draw_grid(Gui *gui_ptr) {
 }
 
 void gui_draw_cell(Gui *gui_ptr, Point position) {
-    Cell cell;
-    cell.side = (float)CELL_WIDTH_BASE * gui_ptr->current_zoom;
-    cell.position.x = (position.x * cell.side) + gui_ptr->view_position.x;
-    cell.position.y = (position.y * cell.side) + gui_ptr->view_position.y;
-
-    if (cell.position.x > gui_ptr->view_position.x + gui_ptr->window_width)
-        return;
-    if (cell.position.y > gui_ptr->view_position.y + gui_ptr->window_height)
-        return;
-
     SDL_Rect rect;
-    rect.x = (int)cell.position.x;
-    rect.y = (int)cell.position.y;
-    rect.w = rect.h = (int)cell.side;
+    float cell_side_f = (float)CELL_WIDTH_BASE * gui_ptr->current_zoom;
+    rect.w = rect.h = (float)CELL_WIDTH_BASE * gui_ptr->current_zoom;
+    rect.x = (position.x * cell_side_f) + gui_ptr->view_position.x;
+    rect.y = (position.y * cell_side_f) + gui_ptr->view_position.y;
+
+    if (rect.x > gui_ptr->window_width ||
+        rect.x + (CELL_WIDTH_BASE * gui_ptr->current_zoom) < 0)
+        return;
+    if (rect.y > gui_ptr->window_height ||
+        rect.y + (CELL_WIDTH_BASE * gui_ptr->current_zoom) < 0)
+        return;
 
     SDL_SetRenderDrawColor(gui_ptr->renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(gui_ptr->renderer, &rect);
