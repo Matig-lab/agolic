@@ -133,7 +133,7 @@ void node_delete_all(Node **head) {
     *head = NULL;
 }
 
-#define GRID_LINE_LEN 40
+#define GRID_LINE_LEN 30
 #define GRID_AREA pow(GRID_LINE_LEN, 2)
 typedef struct {
     float x, y;
@@ -282,11 +282,11 @@ void golstate_neighbor_analysis(GolState *gol_state, int neighborhood_center,
     }
 
     int neighborhood_center_line =
-        neighborhood_center == 0 ? 0
-                                 : neighborhood_center / GRID_LINE_LEN;
+        neighborhood_center == 0 ? 0 : neighborhood_center / GRID_LINE_LEN;
     int neighborhood_start = golstate_compute_neighborhood_start(
         neighborhood_center, neighborhood_center_line);
-    int neighborhood_end = golstate_compute_neighborhood_end(neighborhood_center, neighborhood_center_line);
+    int neighborhood_end = golstate_compute_neighborhood_end(
+        neighborhood_center, neighborhood_center_line);
 
     int neighborhood_end_of_first_line =
         neighborhood_center - (GRID_LINE_LEN - 1);
@@ -452,8 +452,7 @@ Gui *gui_alloc() {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Init(SDL_INIT_EVENTS);
 
-    new_gui->window =
-        SDL_CreateWindow("Game of life", 0, 0, 800, 600, 0);
+    new_gui->window = SDL_CreateWindow("Game of life", 0, 0, 800, 600, 0);
     new_gui->window_width = 800;
     new_gui->window_height = 600;
     check_sdl_ptr(new_gui->window);
@@ -505,11 +504,12 @@ void gui_center_grid(Gui *gui) {
 
 int gui_point_to_virtual_grid_index(Gui *gui_ptr, Point gui_point) {
     gui_point.x -= gui_ptr->view_position.x;
-    gui_point.x -= fmod(gui_point.x, CELL_WIDTH_BASE * gui_ptr->current_zoom);
     gui_point.y -= gui_ptr->view_position.y;
+    gui_point.x -= fmod(gui_point.x, CELL_WIDTH_BASE * gui_ptr->current_zoom);
     gui_point.y -= fmod(gui_point.y, CELL_WIDTH_BASE * gui_ptr->current_zoom);
 
-    int grid_index = (gui_point.y / CELL_WIDTH_BASE) * GRID_LINE_LEN;
+    int grid_index = (gui_point.y / (CELL_WIDTH_BASE * gui_ptr->current_zoom)) *
+                     GRID_LINE_LEN;
     grid_index += gui_point.x / (CELL_WIDTH_BASE * gui_ptr->current_zoom);
     return grid_index;
 }
