@@ -430,7 +430,8 @@ typedef struct {
     int window_width, window_height;
     SDL_Renderer *renderer;
     bool running, there_is_something_to_draw, generation_running, restart,
-        center_grid, shift_pressed, drag_grid;
+        center_grid, shift_pressed, drag_grid, left_click_pressed,
+        right_click_pressed;
     Point initial_mouse_drag_position;
     float current_zoom;
     Point view_position;
@@ -474,6 +475,10 @@ Gui *gui_alloc() {
     new_gui->center_grid = true;
     new_gui->generation_running = false;
     new_gui->restart = false;
+    new_gui->drag_grid = false;
+    new_gui->shift_pressed = false;
+    new_gui->left_click_pressed = false;
+    new_gui->right_click_pressed = false;
     new_gui->current_zoom = 1.f;
     new_gui->view_position.x = 0;
     new_gui->view_position.y = 0;
@@ -587,14 +592,12 @@ void gui_process_mouse_click_event(Gui *gui, SDL_Event *e) {
     Point mouse_position = {0};
     switch (e->button.button) {
     case SDL_BUTTON_LEFT:
+        gui->left_click_pressed = true;
         if (!gui->shift_pressed) {
             mouse_position.x = e->button.x;
             mouse_position.y = e->button.y;
             int mouse_in_virtual_grid =
                 gui_point_to_virtual_grid_index(gui, mouse_position);
-            printf("Info: mouse left click at (%f, %f) transformed to grid "
-                   "index %d\n",
-                   mouse_position.x, mouse_position.y, mouse_in_virtual_grid);
             golstate_arbitrary_give_birth_cell(gui->gol_state,
                                                mouse_in_virtual_grid);
         } else {
@@ -604,13 +607,11 @@ void gui_process_mouse_click_event(Gui *gui, SDL_Event *e) {
         }
         break;
     case SDL_BUTTON_RIGHT:
+        gui->right_click_pressed = true;
         mouse_position.x = e->button.x;
         mouse_position.y = e->button.y;
         int mouse_in_virtual_grid =
             gui_point_to_virtual_grid_index(gui, mouse_position);
-        printf("Info: mouse right click at (%f, %f) transformed to grid index "
-               "%d\n",
-               mouse_position.x, mouse_position.y, mouse_in_virtual_grid);
         golstate_arbitrary_kill_cell(gui->gol_state, mouse_in_virtual_grid);
         break;
     case SDL_BUTTON_MIDDLE:
@@ -647,6 +648,10 @@ void gui_process_events(Gui *gui) {
         case SDL_MOUSEBUTTONUP:
             switch (e.button.button) {
             case SDL_BUTTON_LEFT:
+            case SDL_BUTTON_RIGHT:
+                gui->left_click_pressed = false;
+                gui->right_click_pressed = false;
+                // fall through
             case SDL_BUTTON_MIDDLE:
                 gui->drag_grid = false;
                 break;
@@ -663,6 +668,24 @@ void gui_process_events(Gui *gui) {
             if (gui->drag_grid) {
                 gui->view_position.x += e.motion.xrel;
                 gui->view_position.y += e.motion.yrel;
+            }
+            if (gui->left_click_pressed && !gui->shift_pressed) {
+                Point mouse_position;
+                mouse_position.x = e.button.x;
+                mouse_position.y = e.button.y;
+                int mouse_in_virtual_grid =
+                    gui_point_to_virtual_grid_index(gui, mouse_position);
+                golstate_arbitrary_give_birth_cell(gui->gol_state,
+                                                   mouse_in_virtual_grid);
+            }
+            if (gui->right_click_pressed && !gui->shift_pressed) {
+                Point mouse_position;
+                mouse_position.x = e.button.x;
+                mouse_position.y = e.button.y;
+                int mouse_in_virtual_grid =
+                    gui_point_to_virtual_grid_index(gui, mouse_position);
+                golstate_arbitrary_kill_cell(gui->gol_state,
+                                             mouse_in_virtual_grid);
             }
             break;
         default:
