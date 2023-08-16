@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_mouse.h>
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
@@ -520,6 +521,22 @@ int gui_point_to_virtual_grid_index(Gui *gui, Point gui_point) {
     return grid_index;
 }
 
+enum e_zoom { ZOOM_INCREASE, ZOOM_DECREASE };
+void gui_handle_zoom(Gui *gui, enum e_zoom e_zoom_flag) {
+    switch (e_zoom_flag) {
+    case ZOOM_INCREASE:
+        if (gui->current_zoom + ZOOM_STEP < MAX_ZOOM)
+            gui->current_zoom += ZOOM_STEP;
+        break;
+    case ZOOM_DECREASE:
+        if (gui->current_zoom - ZOOM_STEP > MIN_ZOOM)
+            gui->current_zoom -= ZOOM_STEP;
+        break;
+    default:
+        break;
+    }
+}
+
 void gui_process_key_press_events(Gui *gui, SDL_Event *e) {
     switch (e->key.keysym.sym) {
     case SDLK_ESCAPE:
@@ -527,12 +544,10 @@ void gui_process_key_press_events(Gui *gui, SDL_Event *e) {
         gui->running = false;
         break;
     case SDLK_PLUS:
-        if (gui->current_zoom + ZOOM_STEP <= MAX_ZOOM)
-            gui->current_zoom += ZOOM_STEP;
+        gui_handle_zoom(gui, ZOOM_INCREASE);
         break;
     case SDLK_MINUS:
-        if (gui->current_zoom - ZOOM_STEP >= MIN_ZOOM)
-            gui->current_zoom -= ZOOM_STEP;
+        gui_handle_zoom(gui, ZOOM_DECREASE);
         break;
     case SDLK_UP:
         gui->view_position.y += MOVEMENT_STEP;
@@ -586,6 +601,11 @@ void gui_process_mouse_click_event(Gui *gui, SDL_Event *e) {
             gui->initial_mouse_drag_position.y = e->button.y;
         }
         break;
+    case SDL_BUTTON_MIDDLE:
+        gui->drag_grid = true;
+        gui->initial_mouse_drag_position.x = e->button.x;
+        gui->initial_mouse_drag_position.y = e->button.y;
+        break;
     default:
         break;
     }
@@ -615,8 +635,16 @@ void gui_process_events(Gui *gui) {
         case SDL_MOUSEBUTTONUP:
             switch (e.button.button) {
             case SDL_BUTTON_LEFT:
+            case SDL_BUTTON_MIDDLE:
                 gui->drag_grid = false;
                 break;
+            }
+            break;
+        case SDL_MOUSEWHEEL:
+            if (e.wheel.y > 0) {
+                gui_handle_zoom(gui, ZOOM_INCREASE);
+            } else {
+                gui_handle_zoom(gui, ZOOM_DECREASE);
             }
             break;
         case SDL_MOUSEMOTION:
