@@ -234,7 +234,9 @@ void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index) {
         return;
     if (!gol_state->grid[grid_index])
         return;
-    node_append(&gol_state->dying_cells, grid_index);
+    node_delete_by_data(&gol_state->alive_cells, grid_index);
+    gol_state->grid[grid_index] = false;
+    gol_state->population--;
 }
 
 #define START_IS_IN_CORRECT_INDEX(s, l)                                        \
@@ -590,9 +592,9 @@ void gui_process_mouse_click_event(Gui *gui, SDL_Event *e) {
             mouse_position.y = e->button.y;
             int mouse_in_virtual_grid =
                 gui_point_to_virtual_grid_index(gui, mouse_position);
-            printf(
-                "Info: Mouse Click at (%f, %f) transformed to grid index %d\n",
-                mouse_position.x, mouse_position.y, mouse_in_virtual_grid);
+            printf("Info: mouse left click at (%f, %f) transformed to grid "
+                   "index %d\n",
+                   mouse_position.x, mouse_position.y, mouse_in_virtual_grid);
             golstate_arbitrary_give_birth_cell(gui->gol_state,
                                                mouse_in_virtual_grid);
         } else {
@@ -600,6 +602,16 @@ void gui_process_mouse_click_event(Gui *gui, SDL_Event *e) {
             gui->initial_mouse_drag_position.x = e->button.x;
             gui->initial_mouse_drag_position.y = e->button.y;
         }
+        break;
+    case SDL_BUTTON_RIGHT:
+        mouse_position.x = e->button.x;
+        mouse_position.y = e->button.y;
+        int mouse_in_virtual_grid =
+            gui_point_to_virtual_grid_index(gui, mouse_position);
+        printf("Info: mouse right click at (%f, %f) transformed to grid index "
+               "%d\n",
+               mouse_position.x, mouse_position.y, mouse_in_virtual_grid);
+        golstate_arbitrary_kill_cell(gui->gol_state, mouse_in_virtual_grid);
         break;
     case SDL_BUTTON_MIDDLE:
         gui->drag_grid = true;
