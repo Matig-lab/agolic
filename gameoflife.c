@@ -133,7 +133,7 @@ void node_delete_all(Node **head) {
     *head = NULL;
 }
 
-#define GRID_LINE_LEN 30
+#define GRID_LINE_LEN 40
 #define GRID_AREA pow(GRID_LINE_LEN, 2)
 typedef struct {
     float x, y;
@@ -453,7 +453,7 @@ Gui *gui_alloc() {
     SDL_Init(SDL_INIT_EVENTS);
 
     new_gui->window =
-        SDL_CreateWindow("Game of life (optimized)", 0, 0, 800, 600, 0);
+        SDL_CreateWindow("Game of life", 0, 0, 800, 600, 0);
     new_gui->window_width = 800;
     new_gui->window_height = 600;
     check_sdl_ptr(new_gui->window);
