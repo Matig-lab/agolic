@@ -445,7 +445,7 @@ typedef struct {
 
 #define CELL_WIDTH_BASE 15
 #define MAX_ZOOM 2.f
-#define MIN_ZOOM .5f
+#define MIN_ZOOM .05f
 #define FPS 60
 #define ZOOM_STEP .01f
 #define MOVEMENT_STEP 5
