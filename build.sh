@@ -2,4 +2,4 @@
 
 set -xe
 
-gcc -o gol gameoflife.c -Wextra -Werror -pedantic -lm -lSDL2
+gcc -o build/agolic_optimized gameoflife.c -Wextra -Werror -pedantic -lm -lSDL2

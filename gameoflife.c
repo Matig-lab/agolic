@@ -233,10 +233,11 @@ void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index) {
     node_append(&gol_state->dying_cells, grid_index);
 }
 
-Node *golstate_neighboring_cells_index_list(int neighborhood_center) {
+Node *golstate_neighboring_cells_index_list(GolState *gol_state, int neighborhood_center, int *sum) {
     if (neighborhood_center < 0 || neighborhood_center >= GRID_AREA)
         return NULL;
 
+    *sum = 0;
     Node *head = NULL;
     int neighborhood_start = neighborhood_center - (GRID_LINE_LEN + 1);
     int neighborhood_end = neighborhood_center + (GRID_LINE_LEN + 1);
@@ -256,6 +257,8 @@ Node *golstate_neighboring_cells_index_list(int neighborhood_center) {
             continue;
         }
         node_append(&head, i);
+        if (gol_state->grid[i])
+            (*sum)++;
     }
     return head;
 }
@@ -272,19 +275,12 @@ int golstate_sum_of_neighborhood_lifes(GolState *gol_state,
     return sum;
 }
 
-bool golstate_cell_stays_alive(GolState *gol_state, int cell_index,
-                               Node *cell_neighborhood) {
-    int life_in_neighborhood =
-        golstate_sum_of_neighborhood_lifes(gol_state, cell_neighborhood);
+bool golstate_cell_stays_alive(int life_in_neighborhood) {
     return life_in_neighborhood >= MIN_CELLS_TO_NOT_BE_ISOLATED &&
            life_in_neighborhood <= MAX_CELLS_TO_NOT_BE_OVERPOPULATED;
 }
 
-bool golstate_dead_cell_becomes_alive(GolState *gol_state, int cell_index) {
-
-    Node *neighborhood = golstate_neighboring_cells_index_list(cell_index);
-    int life_in_neighborhood =
-        golstate_sum_of_neighborhood_lifes(gol_state, neighborhood);
+bool golstate_dead_cell_becomes_alive(int life_in_neighborhood) {
     return life_in_neighborhood == CELLS_TO_PRODUCE_LIFE;
 }
 
@@ -318,10 +314,10 @@ void golstate_analize_generation(GolState *gol_state) {
     Node *current_cell = gol_state->alive_cells;
     while (current_cell) {
 
-        Node *neighborhood =
-            golstate_neighboring_cells_index_list(current_cell->data);
-        if (!golstate_cell_stays_alive(gol_state, current_cell->data,
-                                       neighborhood)) {
+        int life_in_neighborhood = 0;
+        Node *neighborhood = golstate_neighboring_cells_index_list(gol_state,
+            current_cell->data, &life_in_neighborhood);
+        if (!golstate_cell_stays_alive(life_in_neighborhood)) {
             node_append(&gol_state->dying_cells, current_cell->data);
         }
 
@@ -334,8 +330,10 @@ void golstate_analize_generation(GolState *gol_state) {
                 continue;
             }
 
-            if (golstate_dead_cell_becomes_alive(
-                    gol_state, current_neighborhood_cell->data)) {
+            golstate_neighboring_cells_index_list(gol_state, current_neighborhood_cell->data,
+                                                  &life_in_neighborhood);
+
+            if (golstate_dead_cell_becomes_alive(life_in_neighborhood)) {
                 node_append(&gol_state->becoming_alive_cells,
                             current_neighborhood_cell->data);
                 gol_state->analized_cells[current_neighborhood_cell->data] =
@@ -408,7 +406,7 @@ Gui *gui_alloc() {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Init(SDL_INIT_EVENTS);
 
-    new_gui->window = SDL_CreateWindow("Game of life", 0, 0, 800, 600, 0);
+    new_gui->window = SDL_CreateWindow("Game of life (optimized)", 0, 0, 800, 600, 0);
     new_gui->window_width = 800;
     new_gui->window_height = 600;
     check_sdl_ptr(new_gui->window);
