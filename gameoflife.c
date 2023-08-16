@@ -630,11 +630,11 @@ void gui_draw_grid(Gui *gui_ptr) {
              GRID_LINE_LEN * (CELL_WIDTH_BASE * gui_ptr->current_zoom) +
                  gui_ptr->view_position.y);
 
-    for (float x = start_x; x <= end_x; x += final_cell_width) {
+    for (float x = start_x; x <= end_x + 1; x += final_cell_width) {
         SDL_RenderDrawLineF(gui_ptr->renderer, x, start_y, x, end_y);
     }
 
-    for (float y = start_y; y <= end_y; y += final_cell_width) {
+    for (float y = start_y; y <= end_y + 1; y += final_cell_width) {
         SDL_RenderDrawLineF(gui_ptr->renderer, start_x, y, end_x, y);
     }
 }
