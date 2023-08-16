@@ -1,4 +1,6 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keycode.h>
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
@@ -425,7 +427,8 @@ typedef struct {
     int window_width, window_height;
     SDL_Renderer *renderer;
     bool running, there_is_something_to_draw, generation_running, restart,
-        center_grid;
+        center_grid, shift_pressed, drag_grid;
+    Point initial_mouse_drag_position;
     float current_zoom;
     Point view_position;
     GolState *gol_state;
@@ -517,7 +520,7 @@ int gui_point_to_virtual_grid_index(Gui *gui, Point gui_point) {
     return grid_index;
 }
 
-void gui_process_keyboard_events(Gui *gui, SDL_Event *e) {
+void gui_process_key_press_events(Gui *gui, SDL_Event *e) {
     switch (e->key.keysym.sym) {
     case SDLK_ESCAPE:
     case SDLK_q:
@@ -543,6 +546,9 @@ void gui_process_keyboard_events(Gui *gui, SDL_Event *e) {
     case SDLK_LEFT:
         gui->view_position.x += MOVEMENT_STEP;
         break;
+    case SDLK_LSHIFT:
+        gui->shift_pressed = true;
+        break;
     case SDLK_SPACE:
         gui->generation_running = true;
         puts("Info: Proceeding to the next generation...");
@@ -560,19 +566,25 @@ void gui_process_keyboard_events(Gui *gui, SDL_Event *e) {
     }
 }
 
-void gui_process_mouse_event(Gui *gui, SDL_Event *e) {
+void gui_process_mouse_click_event(Gui *gui, SDL_Event *e) {
     Point mouse_position = {0};
     switch (e->button.button) {
     case SDL_BUTTON_LEFT:
-        mouse_position.x = e->button.x;
-        mouse_position.y = e->button.y;
-        int mouse_in_virtual_grid =
-            gui_point_to_virtual_grid_index(gui, mouse_position);
-        printf("Info: Mouse Click at (%f, %f) transformed to grid index %d\n",
-               mouse_position.x, mouse_position.y, mouse_in_virtual_grid);
-        golstate_arbitrary_give_birth_cell(gui->gol_state,
-                                           mouse_in_virtual_grid);
-        gui->there_is_something_to_draw = true;
+        if (!gui->shift_pressed) {
+            mouse_position.x = e->button.x;
+            mouse_position.y = e->button.y;
+            int mouse_in_virtual_grid =
+                gui_point_to_virtual_grid_index(gui, mouse_position);
+            printf(
+                "Info: Mouse Click at (%f, %f) transformed to grid index %d\n",
+                mouse_position.x, mouse_position.y, mouse_in_virtual_grid);
+            golstate_arbitrary_give_birth_cell(gui->gol_state,
+                                               mouse_in_virtual_grid);
+        } else {
+            gui->drag_grid = true;
+            gui->initial_mouse_drag_position.x = e->button.x;
+            gui->initial_mouse_drag_position.y = e->button.y;
+        }
         break;
     default:
         break;
@@ -581,17 +593,37 @@ void gui_process_mouse_event(Gui *gui, SDL_Event *e) {
 
 void gui_process_events(Gui *gui) {
     SDL_Event e;
+    gui->there_is_something_to_draw = true;
     while (SDL_PollEvent(&e)) {
         switch (e.type) {
         case SDL_QUIT:
             gui->running = false;
             break;
         case SDL_KEYDOWN:
-            gui->there_is_something_to_draw = true;
-            gui_process_keyboard_events(gui, &e);
+            gui_process_key_press_events(gui, &e);
+            break;
+        case SDL_KEYUP:
+            switch (e.key.keysym.sym) {
+            case SDLK_LSHIFT:
+                gui->shift_pressed = false;
+                break;
+            }
             break;
         case SDL_MOUSEBUTTONDOWN:
-            gui_process_mouse_event(gui, &e);
+            gui_process_mouse_click_event(gui, &e);
+            break;
+        case SDL_MOUSEBUTTONUP:
+            switch (e.button.button) {
+            case SDL_BUTTON_LEFT:
+                gui->drag_grid = false;
+                break;
+            }
+            break;
+        case SDL_MOUSEMOTION:
+            if (gui->drag_grid) {
+                gui->view_position.x += e.motion.xrel;
+                gui->view_position.y += e.motion.yrel;
+            }
             break;
         default:
             break;
