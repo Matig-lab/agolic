@@ -618,8 +618,8 @@ void gui_draw_grid(Gui *gui_ptr) {
     float final_cell_width = CELL_WIDTH_BASE * gui_ptr->current_zoom;
     SDL_SetRenderDrawColor(gui_ptr->renderer, 20, 20, 20, 255);
 
-    float start_x = fmax(0, gui_ptr->view_position.x);
-    float start_y = fmax(0, gui_ptr->view_position.y);
+    float start_x = gui_ptr->view_position.x;
+    float start_y = gui_ptr->view_position.y;
 
     float end_x =
         fmin(gui_ptr->window_width,
