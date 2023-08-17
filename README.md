@@ -19,7 +19,7 @@ This is a progam wich implements the Conway's "Game of life" using C and the gra
 
 1. Clone this repo: `$ git clone https://github.com/Matig-lab/agolic.git`
 2. Enter to the repo directory: `$ cd agolic`
-3. Compile the program:  `$ gcc -o agolic gameoflife.c -lm -lSDL2`
+3. Compile the program: run `./build.sh` or execute `$ gcc -o agolic gameoflife.c -lm -lSDL2`
 4. Run the program: `$ ./agolic`
 
 ## Instructions
