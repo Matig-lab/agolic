@@ -509,17 +509,20 @@ void gui_center_grid(Gui *gui) {
     gui->view_position.x = x_offset;
     gui->view_position.y = y_offset;
 }
-
 int gui_point_to_virtual_grid_index(Gui *gui, Point gui_point) {
     gui_point.x -= gui->view_position.x;
     gui_point.y -= gui->view_position.y;
     gui_point.x -= fmod(gui_point.x, CELL_WIDTH_BASE * gui->current_zoom);
     gui_point.y -= fmod(gui_point.y, CELL_WIDTH_BASE * gui->current_zoom);
 
-    int grid_index =
+    int grid_index_x = gui_point.x / (CELL_WIDTH_BASE * gui->current_zoom);
+    int grid_index_y =
         (gui_point.y / (CELL_WIDTH_BASE * gui->current_zoom)) * GRID_LINE_LEN;
-    grid_index += gui_point.x / (CELL_WIDTH_BASE * gui->current_zoom);
-    return grid_index;
+
+    if (grid_index_x < 0 || grid_index_x >= GRID_LINE_LEN)
+        return -1;
+
+    return grid_index_y + grid_index_x;
 }
 
 enum e_zoom { ZOOM_INCREASE, ZOOM_DECREASE };
