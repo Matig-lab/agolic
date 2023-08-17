@@ -143,7 +143,7 @@ static void gui_process_mouse_click_event(Gui *gui, SDL_Event *e) {
         if (!gui->shift_pressed) {
             mouse_position.x = e->button.x;
             mouse_position.y = e->button.y;
-            int mouse_in_virtual_grid = gui_point_to_virtual_grid_index(
+            int mouse_in_virtual_grid = gui_point2d_to_grid1d(
                 mouse_position, gui->view_position, GRID_WIDTH, CELL_WIDTH_BASE,
                 gui->current_zoom);
             golstate_arbitrary_give_birth_cell(gui->gol_state,
@@ -158,7 +158,7 @@ static void gui_process_mouse_click_event(Gui *gui, SDL_Event *e) {
         gui->right_click_pressed = true;
         mouse_position.x = e->button.x;
         mouse_position.y = e->button.y;
-        int mouse_in_virtual_grid = gui_point_to_virtual_grid_index(
+        int mouse_in_virtual_grid = gui_point2d_to_grid1d(
             mouse_position, gui->view_position, GRID_WIDTH, CELL_WIDTH_BASE,
             gui->current_zoom);
         golstate_arbitrary_kill_cell(gui->gol_state, mouse_in_virtual_grid);
@@ -222,7 +222,7 @@ static void gui_process_events(Gui *gui) {
                 Point mouse_position;
                 mouse_position.x = e.button.x;
                 mouse_position.y = e.button.y;
-                int mouse_in_virtual_grid = gui_point_to_virtual_grid_index(
+                int mouse_in_virtual_grid = gui_point2d_to_grid1d(
                     mouse_position, gui->view_position, GRID_WIDTH,
                     CELL_WIDTH_BASE, gui->current_zoom);
                 golstate_arbitrary_give_birth_cell(gui->gol_state,
@@ -232,7 +232,7 @@ static void gui_process_events(Gui *gui) {
                 Point mouse_position;
                 mouse_position.x = e.button.x;
                 mouse_position.y = e.button.y;
-                int mouse_in_virtual_grid = gui_point_to_virtual_grid_index(
+                int mouse_in_virtual_grid = gui_point2d_to_grid1d(
                     mouse_position, gui->view_position, GRID_WIDTH,
                     CELL_WIDTH_BASE, gui->current_zoom);
                 golstate_arbitrary_kill_cell(gui->gol_state,
