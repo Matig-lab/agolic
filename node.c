@@ -1,13 +1,20 @@
 #include "node.h"
 #include <assert.h>
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 Node *node_alloc(int data) {
     Node *new_node = malloc(sizeof(*new_node));
     new_node->next = NULL;
     new_node->data = data;
     return new_node;
+}
+
+void node_destroy(Node **node) {
+    if ((*node)->next != NULL)
+        return;
+    free(*node);
+    *node = NULL;
 }
 
 int node_len(Node *head) {
@@ -20,7 +27,7 @@ int node_len(Node *head) {
     return len;
 }
 
-void node_append(Node **head, int data) {
+void node_append_uniq(Node **head, int data) {
     Node *new_node = node_alloc(data);
     if (!*head) {
         *head = new_node;

@@ -70,7 +70,7 @@ void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
     if (gol_state->grid[grid_index]) {
         return;
     }
-    node_append(&gol_state->alive_cells, grid_index);
+    node_append_uniq(&gol_state->alive_cells, grid_index);
     gol_state->grid[grid_index] = true;
     gol_state->population++;
 }
@@ -162,7 +162,7 @@ static void golstate_neighborhood_analysis(GolState *gol_state,
             continue;
         }
         if (gather_indexes)
-            node_append(list_of_indexes_dst, i);
+            node_append_uniq(list_of_indexes_dst, i);
         if (gol_state->grid[i])
             (*life_in_neighborhood)++;
     }
@@ -189,7 +189,7 @@ void golstate_analyze_generation(GolState *gol_state) {
                                        &neighborhood, &life_in_neighborhood,
                                        true);
         if (!golstate_cell_stays_alive(life_in_neighborhood)) {
-            node_append(&gol_state->dying_cells, current_cell->data);
+            node_append_uniq(&gol_state->dying_cells, current_cell->data);
         }
 
         // Analize each dead cell in neighborhood
@@ -207,7 +207,7 @@ void golstate_analyze_generation(GolState *gol_state) {
                                            NULL, &life_in_neighborhood, false);
 
             if (golstate_dead_cell_becomes_alive(life_in_neighborhood)) {
-                node_append(&gol_state->becoming_alive_cells,
+                node_append_uniq(&gol_state->becoming_alive_cells,
                             current_neighborhood_cell->data);
                 gol_state
                     ->analyzed_grid_cells[current_neighborhood_cell->data] =
