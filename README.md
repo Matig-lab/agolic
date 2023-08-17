@@ -31,3 +31,10 @@ This is a progam wich implements the Conway's "Game of life" using C and the gra
 - **Mouse Wheel** or **+**, **-**: Adjust zoom.
 - **C**: Center the grid in screen.
 - **ESC** or **Q**: Quits the program.
+
+
+## Tests
+
+The tests uses the criterion framework. Make sure to have that installed
+
+1. Running tests: `$ make test`
