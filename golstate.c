@@ -35,6 +35,7 @@ void golstate_restart(GolState *gol_state) {
     node_destroy_all(&gol_state->dying_cells);
     gol_state->population = 0;
     gol_state->generation = 0;
+    gol_state->is_generation_analyzed = false;
     for (int i = 0; i < GRID_SIZE; i++) {
         gol_state->grid[i] = false;
         gol_state->analyzed_grid_cells[i] = false;
