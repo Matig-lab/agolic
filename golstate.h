@@ -6,12 +6,12 @@
 
 #include <stdbool.h>
 
-#define GRID_WIDTH 100
-#define GRID_SIZE pow(GRID_WIDTH, 2)
+#define GRID_WIDTH 500
+#define GRID_SIZE GRID_WIDTH *GRID_WIDTH
 
 typedef struct {
-    bool *grid;
-    bool *analyzed_grid_cells;
+    bool grid[GRID_SIZE];
+    bool analyzed_grid_cells[GRID_SIZE];
     Node *alive_cells;
     Node *dying_cells;
     Node *becoming_alive_cells;

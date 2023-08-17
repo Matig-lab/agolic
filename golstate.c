@@ -4,8 +4,8 @@
 
 GolState *golstate_alloc() {
     GolState *gol_state = malloc(sizeof(*gol_state));
-    gol_state->grid = malloc(sizeof(bool) * GRID_SIZE);
-    gol_state->analyzed_grid_cells = malloc(sizeof(bool) * GRID_SIZE);
+    // gol_state->grid = malloc(sizeof(bool) * GRID_SIZE);
+    // gol_state->analyzed_grid_cells = malloc(sizeof(bool) * GRID_SIZE);
     for (int i = 0; i < GRID_SIZE; i++) {
         gol_state->grid[i] = false;
         gol_state->analyzed_grid_cells[i] = false;
@@ -20,8 +20,8 @@ GolState *golstate_alloc() {
 }
 
 void golstate_destroy(GolState **gol_state) {
-    free((*gol_state)->grid);
-    free((*gol_state)->analyzed_grid_cells);
+    // free((*gol_state)->grid);
+    // free((*gol_state)->analyzed_grid_cells);
     node_destroy_all(&(*gol_state)->alive_cells);
     node_destroy_all(&(*gol_state)->dying_cells);
     node_destroy_all(&(*gol_state)->becoming_alive_cells);
