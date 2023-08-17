@@ -2,31 +2,45 @@ CC=gcc
 BIN=agolic
 CFLAGS=-Wall -Wextra -Werror -pedantic
 LNFLAGS=-lm -lSDL2
-SRC=node.c point.c golstate.c gui.c main.c
-OBJS=$(SRC:.c=.o)
+
+SRC_DIR=src
+SRC=$(wildcard $(SRC_DIR)/*.c)
+OBJS=$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRC))
+
+BUILD_DIR=build
+BUILD_DIR_CREATED=
 
 TESTS_DIR=tests
+TESTS_BIN_DIR=tests/bin
 TESTS_SRC=$(wildcard $(TESTS_DIR)/*.c)
 TESTS_BINS=$(patsubst $(TESTS_DIR)/%.c, $(TESTS_DIR)/bin/%, $(TESTS_SRC))
+TESTS_BIN_DIR_CREATED=
 
 all: $(BIN)
 
 $(BIN): $(OBJS)
-	gcc -o $@ $? $(CFLAGS) $(LNFLAGS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LNFLAGS)
 
-%.o: %.c
-	gcc -c $? $(CFLAGS) $(LNFLAGS)
-
-$(BIN_TESTS): $(TESTS_BINS)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	@if [ -z "$(BUILD_DIR_CREATED)" ]; then \
+		mkdir -p $(BUILD_DIR); \
+		BUILD_DIR_CREATED=1; \
+	fi
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(TESTS_BINS): $(TESTS_DIR)/bin/% : $(TESTS_DIR)/%.c $(OBJS)
-	$(CC) -o $@ $< $(CFLAGS) $(filter-out main.o, $(OBJS)) $(LNFLAGS) -lcriterion
+	@if [ -z "$(TEST_BIN_DIR_CREATED)" ]; then \
+		mkdir -p $(TESTS_BIN_DIR); \
+		TESTS_BIN_DIR_CREATED=1; \
+	fi
+	$(CC) -o $@ $< $(CFLAGS) $(filter-out $(BUILD_DIR)/main.o, $(OBJS)) $(LNFLAGS) -lcriterion
 
 test: $(TESTS_BINS)
-	for test in $(TESTS_BINS) ; do ./$$test ; done
+	@echo "Running tests..."
+	@for test in $(TESTS_BINS) ; do ./$$test ; done
 
 test_verbose: $(TESTS_BINS)
 	for test in $(TESTS_BINS) ; do ./$$test --verbose ; done
 
 clean:
-	rm $(BIN) $(OBJS)
+	rm -f $(BIN) $(OBJS)

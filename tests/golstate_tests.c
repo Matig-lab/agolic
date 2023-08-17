@@ -1,4 +1,4 @@
-#include "../golstate.h"
+#include "../src/golstate.h"
 #include <criterion/criterion.h>
 #include <time.h>
 

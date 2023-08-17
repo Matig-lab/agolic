@@ -1,4 +1,4 @@
-#include "../node.h"
+#include "../src/node.h"
 #include <criterion/criterion.h>
 
 #define SAMPLE_DATA 10
