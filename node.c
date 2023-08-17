@@ -29,18 +29,20 @@ int node_len(Node *head) {
 }
 
 void node_append_uniq(Node **head, int data) {
-    Node *new_node = node_alloc(data);
     if (!*head) {
+        Node *new_node = node_alloc(data);
         *head = new_node;
         return;
     }
 
     Node *current = *head;
     while (current->next) {
-        if (current->data == data)
+        if (current->data == data) {
             return;
+        }
         current = current->next;
     }
+    Node *new_node = node_alloc(data);
     current->next = new_node;
 }
 
@@ -124,9 +126,9 @@ void node_destroy_all(Node **head) {
 
     Node *current = *head;
     while (current) {
-        Node *next = current->next;
-        node_destroy(&current);
-        current = next;
+        Node *tmp = current;
+        current = current->next;
+        node_destroy(&tmp);
     }
     *head = NULL;
 }
