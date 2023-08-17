@@ -30,8 +30,7 @@ int node_len(Node *head) {
 
 void node_append_uniq(Node **head, int data) {
     if (!*head) {
-        Node *new_node = node_alloc(data);
-        *head = new_node;
+        *head = node_alloc(data);
         return;
     }
 
@@ -42,8 +41,8 @@ void node_append_uniq(Node **head, int data) {
         }
         current = current->next;
     }
-    Node *new_node = node_alloc(data);
-    current->next = new_node;
+    if (current->data != data)
+        current->next = node_alloc(data);
 }
 
 void node_insert_head(Node **head, int data) {
