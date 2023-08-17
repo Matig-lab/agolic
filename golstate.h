@@ -1,5 +1,9 @@
+#ifndef _GOLSTATE_H_
+#define _GOLSTATE_H_
+
 #include "node.h"
 #include <math.h>
+
 #include <stdbool.h>
 
 #define GRID_WIDTH 100
@@ -27,3 +31,5 @@ void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index);
 void golstate_cleanup(GolState *gol_state);
 void golstate_analyze_generation(GolState *gol_state);
 void golstate_next_generation(GolState *gol_state);
+
+#endif // _GOLSTATE_H_
