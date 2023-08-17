@@ -1,4 +1,5 @@
 #include "node.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -81,14 +82,14 @@ void node_delete_by_index(Node **head, int index) {
 
     if (i == 0) {
         *head = current->next;
-        free(current);
+        node_destroy(&current);
         return;
     }
 
     while (current->next) {
         if (i == index) {
             last->next = current->next;
-            free(current);
+            node_destroy(&current);
             break;
         }
         last = current;
@@ -103,7 +104,7 @@ void node_delete_by_data(Node **head, int data) {
     if ((*head)->data == data) {
         Node *temp = *head;
         *head = (*head)->next;
-        free(temp);
+        node_destroy(&temp);
         return;
     }
 
@@ -114,7 +115,7 @@ void node_delete_by_data(Node **head, int data) {
         current = current->next;
     }
     last->next = current->next;
-    free(current);
+    node_destroy(&current);
 }
 
 void node_destroy_all(Node **head) {
@@ -124,7 +125,7 @@ void node_destroy_all(Node **head) {
     Node *current = *head;
     while (current) {
         Node *next = current->next;
-        free(current);
+        node_destroy(&current);
         current = next;
     }
     *head = NULL;
