@@ -1,4 +1,5 @@
 #include "node.h"
+#include "point.h"
 #include <SDL2/SDL.h>
 #include <math.h>
 #include <stdbool.h>
@@ -7,29 +8,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define GRID_LINE_LEN 100
-#define GRID_AREA pow(GRID_LINE_LEN, 2)
-typedef struct {
-    float x, y;
-} Point;
-
-int point_to_grid_index(Point p) {
-    int index = 0;
-    index = GRID_LINE_LEN * p.y;
-    index += p.x;
-    if (index < 0 || index < GRID_AREA)
-        return -1;
-    return index;
-}
-
-Point grid_index_to_point(int grid_index) {
-    Point p = {-1, -1};
-    if (grid_index < 0 || grid_index >= GRID_AREA)
-        return p;
-    p.y = (float)floorf((float)grid_index / GRID_LINE_LEN);
-    p.x = (float)floorf((grid_index % GRID_LINE_LEN));
-    return p;
-}
+#define GRID_WIDTH 100
+#define GRID_SIZE pow(GRID_WIDTH, 2)
 
 typedef struct {
     bool *grid;
@@ -47,9 +27,9 @@ typedef struct {
 
 GolState *golstate_alloc() {
     GolState *gol_state = malloc(sizeof(*gol_state));
-    gol_state->grid = malloc(sizeof(bool) * GRID_AREA);
-    gol_state->analyzed_grid_cells = malloc(sizeof(bool) * GRID_AREA);
-    for (int i = 0; i < GRID_AREA; i++) {
+    gol_state->grid = malloc(sizeof(bool) * GRID_SIZE);
+    gol_state->analyzed_grid_cells = malloc(sizeof(bool) * GRID_SIZE);
+    for (int i = 0; i < GRID_SIZE; i++) {
         gol_state->grid[i] = false;
         gol_state->analyzed_grid_cells[i] = false;
     }
@@ -76,14 +56,14 @@ void golstate_restart(GolState *gol_state) {
     node_destroy_all(&gol_state->dying_cells);
     gol_state->population = 0;
     gol_state->generation = 0;
-    for (int i = 0; i < GRID_AREA; i++) {
+    for (int i = 0; i < GRID_SIZE; i++) {
         gol_state->grid[i] = false;
         gol_state->analyzed_grid_cells[i] = false;
     }
 }
 
 void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
-    if (grid_index < 0 || grid_index >= GRID_AREA) {
+    if (grid_index < 0 || grid_index >= GRID_SIZE) {
         return;
     }
     if (gol_state->grid[grid_index]) {
@@ -95,7 +75,7 @@ void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
 }
 
 void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index) {
-    if (grid_index < 0 || grid_index >= GRID_AREA)
+    if (grid_index < 0 || grid_index >= GRID_SIZE)
         return;
     if (!gol_state->grid[grid_index])
         return;
@@ -105,12 +85,12 @@ void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index) {
 }
 
 #define START_IS_IN_CORRECT_INDEX(s, l)                                        \
-    (s >= 0 && (s == 0 ? 0 : s / GRID_LINE_LEN) == l)
+    (s >= 0 && (s == 0 ? 0 : s / GRID_WIDTH) == l)
 int golstate_compute_neighborhood_start(int neighborhood_center,
                                         int line_of_neighborhood_center) {
     int start;
     for (int offset = 1; offset >= -1; offset--) {
-        start = neighborhood_center - (GRID_LINE_LEN + offset);
+        start = neighborhood_center - (GRID_WIDTH + offset);
         if (START_IS_IN_CORRECT_INDEX(start, line_of_neighborhood_center - 1)) {
             return start;
         }
@@ -123,12 +103,12 @@ int golstate_compute_neighborhood_start(int neighborhood_center,
 }
 
 #define END_IS_IN_CORRECT_INDEX(s, l)                                          \
-    (s < GRID_AREA && (s == 0 ? 0 : s / GRID_LINE_LEN) == l)
+    (s < GRID_SIZE && (s == 0 ? 0 : s / GRID_WIDTH) == l)
 int golstate_compute_neighborhood_end(int neighborhood_center,
                                       int line_of_neighborhood_center) {
     int end;
     for (int offset = 1; offset >= -1; offset--) {
-        end = neighborhood_center + (GRID_LINE_LEN + offset);
+        end = neighborhood_center + (GRID_WIDTH + offset);
         if (END_IS_IN_CORRECT_INDEX(end, line_of_neighborhood_center + 1)) {
             return end;
         }
@@ -144,7 +124,7 @@ void golstate_neighbor_analysis(GolState *gol_state, int neighborhood_center,
                                 Node **list_of_indexes_dst,
                                 int *life_in_neighborhood,
                                 bool gather_indexes) {
-    if (neighborhood_center < 0 || neighborhood_center >= GRID_AREA)
+    if (neighborhood_center < 0 || neighborhood_center >= GRID_SIZE)
         return;
 
     *life_in_neighborhood = 0;
@@ -153,22 +133,22 @@ void golstate_neighbor_analysis(GolState *gol_state, int neighborhood_center,
     }
 
     int neighborhood_center_line =
-        neighborhood_center == 0 ? 0 : neighborhood_center / GRID_LINE_LEN;
+        neighborhood_center == 0 ? 0 : neighborhood_center / GRID_WIDTH;
     int neighborhood_start = golstate_compute_neighborhood_start(
         neighborhood_center, neighborhood_center_line);
     int neighborhood_end = golstate_compute_neighborhood_end(
         neighborhood_center, neighborhood_center_line);
 
     int neighborhood_end_of_first_line =
-        neighborhood_center - (GRID_LINE_LEN - 1);
+        neighborhood_center - (GRID_WIDTH - 1);
     int neighborhood_end_of_second_line = neighborhood_center + 1;
-    int jump_to_start_of_nextline = GRID_LINE_LEN - 4;
+    int jump_to_start_of_nextline = GRID_WIDTH - 4;
     int current_line =
         neighborhood_center_line - 1 < 0 ? 0 : neighborhood_center_line - 1;
     for (int i = neighborhood_start; i <= neighborhood_end; i++) {
         if (i < 0 || i == neighborhood_center)
             continue;
-        if (i >= GRID_AREA)
+        if (i >= GRID_SIZE)
             break;
         if (i == neighborhood_end_of_first_line + 1 ||
             i == neighborhood_end_of_second_line + 1) {
@@ -177,7 +157,7 @@ void golstate_neighbor_analysis(GolState *gol_state, int neighborhood_center,
             continue;
         }
 
-        if (i / GRID_LINE_LEN != current_line) {
+        if (i / GRID_WIDTH != current_line) {
             continue;
         }
         if (gather_indexes)
@@ -201,7 +181,7 @@ void golstate_cleanup(GolState *gol_state) {
     Node *current = gol_state->alive_cells;
     Node *prev = NULL;
 
-    for (int i = 0; i < GRID_AREA; i++) {
+    for (int i = 0; i < GRID_SIZE; i++) {
         gol_state->analyzed_grid_cells[i] = false;
     }
 
@@ -372,7 +352,7 @@ double gui_get_performance(void (*run)(Gui *), Gui *gui) {
 }
 
 void gui_center_grid(Gui *gui) {
-    float grid_width = CELL_WIDTH_BASE * gui->current_zoom * GRID_LINE_LEN;
+    float grid_width = CELL_WIDTH_BASE * gui->current_zoom * GRID_WIDTH;
     int x_offset = (gui->window_width - grid_width) / 2;
     int y_offset = (gui->window_height - grid_width) / 2;
     gui->view_position.x = x_offset;
@@ -386,9 +366,9 @@ int gui_point_to_virtual_grid_index(Gui *gui, Point gui_point) {
 
     int grid_index_x = gui_point.x / (CELL_WIDTH_BASE * gui->current_zoom);
     int grid_index_y =
-        (gui_point.y / (CELL_WIDTH_BASE * gui->current_zoom)) * GRID_LINE_LEN;
+        (gui_point.y / (CELL_WIDTH_BASE * gui->current_zoom)) * GRID_WIDTH;
 
-    if (grid_index_x < 0 || grid_index_x >= GRID_LINE_LEN)
+    if (grid_index_x < 0 || grid_index_x >= GRID_WIDTH)
         return -1;
 
     return grid_index_y + grid_index_x;
@@ -599,10 +579,10 @@ void gui_draw_grid(Gui *gui) {
     float start_y = gui->view_position.y;
 
     float end_x = fmin(gui->window_width,
-                       GRID_LINE_LEN * (CELL_WIDTH_BASE * gui->current_zoom) +
+                       GRID_WIDTH * (CELL_WIDTH_BASE * gui->current_zoom) +
                            gui->view_position.x);
     float end_y = fmin(gui->window_height,
-                       GRID_LINE_LEN * (CELL_WIDTH_BASE * gui->current_zoom) +
+                       GRID_WIDTH * (CELL_WIDTH_BASE * gui->current_zoom) +
                            gui->view_position.y);
 
     for (float x = start_x; x <= end_x + 1; x += final_cell_width) {
@@ -641,7 +621,8 @@ void gui_render(Gui *gui) {
 
     Node *current = gui->gol_state->alive_cells;
     while (current) {
-        Point gui_point = grid_index_to_point(current->data);
+        Point gui_point =
+            grid1d_to_point2d(current->data, GRID_WIDTH, GRID_SIZE);
         gui_draw_cell(gui, gui_point);
         current = current->next;
     }
@@ -653,7 +634,7 @@ void gui_render(Gui *gui) {
 void gui_run(Gui *gui) {
 
     Point p = {150, 150};
-    gui->gol_state->grid[point_to_grid_index(p)] = true;
+    gui->gol_state->grid[point2d_to_grid1d(p, GRID_WIDTH, GRID_SIZE)] = true;
 
     uint32_t current_time = SDL_GetTicks();
     uint32_t last_frame_time = current_time;

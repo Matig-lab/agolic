@@ -2,7 +2,7 @@ CC=gcc
 BIN=agolic
 CFLAGS=-Wall -Wextra -Werror -pedantic
 LNFLAGS=-lm -lSDL2
-SRC=node.c gameoflife.c
+SRC=node.c point.c gameoflife.c
 OBJS=$(SRC:.c=.o)
 
 all: $(BIN)
