@@ -213,17 +213,11 @@ void golstate_restart(GolState *gol_state) {
 
 void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
     if (grid_index < 0 || grid_index >= GRID_AREA) {
-        printf("Info: New cell addition rejected: index out of bounds (%d)\n",
-               grid_index);
         return;
     }
     if (gol_state->grid[grid_index]) {
-        printf(
-            "Info: New cell addition rejected: there is already a cell in %d\n",
-            grid_index);
         return;
     }
-    printf("Info: New cell added at grid index %d\n", grid_index);
     node_append(&gol_state->alive_cells, grid_index);
     gol_state->grid[grid_index] = true;
     gol_state->population++;
@@ -429,9 +423,9 @@ typedef struct {
     SDL_Window *window;
     int window_width, window_height;
     SDL_Renderer *renderer;
-    bool running, there_is_something_to_draw, generation_running, restart,
+    bool running, there_is_something_to_draw, simulaton_running, restart,
         center_grid, shift_pressed, drag_grid, left_click_pressed,
-        right_click_pressed;
+        step_to_next_generation, right_click_pressed;
     Point initial_mouse_drag_position;
     float current_zoom;
     Point view_position;
@@ -473,7 +467,7 @@ Gui *gui_alloc() {
 
     new_gui->running = true;
     new_gui->center_grid = true;
-    new_gui->generation_running = false;
+    new_gui->simulaton_running = false;
     new_gui->restart = false;
     new_gui->drag_grid = false;
     new_gui->shift_pressed = false;
@@ -572,11 +566,18 @@ void gui_process_key_press_events(Gui *gui, SDL_Event *e) {
         gui->shift_pressed = true;
         break;
     case SDLK_SPACE:
-        gui->generation_running = true;
-        puts("Info: Proceeding to the next generation...");
+        if (gui->shift_pressed) {
+            gui->step_to_next_generation = true;
+            puts("Info: Step to the next generation...");
+        } else {
+            gui->simulaton_running = !gui->simulaton_running;
+            printf("Info: %s simulation...\n",
+                   gui->simulaton_running ? "Starting" : "Stoping");
+        }
         break;
     case SDLK_r:
         gui->restart = true;
+        gui->simulaton_running = false;
         puts("Info: Restarting...");
         break;
     case SDLK_c:
@@ -703,12 +704,18 @@ void gui_update(Gui *gui) {
         gui_center_grid(gui);
         gui->center_grid = false;
     }
-    if (gui->generation_running) {
+    if (gui->simulaton_running) {
         golstate_analyze_generation(gui->gol_state);
         golstate_next_generation(gui->gol_state);
-        printf("Info: Population: %d, Generation: %d\n",
-               gui->gol_state->population, gui->gol_state->generation);
-        gui->generation_running = false;
+        if (gui->gol_state->population == 0) {
+            gui->simulaton_running = false;
+            printf("Info: No population, stoping simulation...\n");
+        }
+    }
+    if (gui->step_to_next_generation) {
+        golstate_analyze_generation(gui->gol_state);
+        golstate_next_generation(gui->gol_state);
+        gui->step_to_next_generation = false;
     }
 }
 
