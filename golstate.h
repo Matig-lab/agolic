@@ -24,7 +24,7 @@ typedef struct {
 #define NEIGHBORS_TO_REPRODUCE 3
 
 GolState *golstate_alloc();
-void golstate_destroy(GolState *gol_state);
+void golstate_destroy(GolState **gol_state);
 void golstate_restart(GolState *gol_state);
 void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index);
 void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index);

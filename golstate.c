@@ -1,4 +1,5 @@
 #include "golstate.h"
+
 #include <stdlib.h>
 
 GolState *golstate_alloc() {
@@ -18,12 +19,14 @@ GolState *golstate_alloc() {
     return gol_state;
 }
 
-void golstate_destroy(GolState *gol_state) {
-    free(gol_state->grid);
-    node_destroy_all(&gol_state->alive_cells);
-    node_destroy_all(&gol_state->dying_cells);
-    node_destroy_all(&gol_state->becoming_alive_cells);
-    free(gol_state);
+void golstate_destroy(GolState **gol_state) {
+    free((*gol_state)->grid);
+    free((*gol_state)->analyzed_grid_cells);
+    node_destroy_all(&(*gol_state)->alive_cells);
+    node_destroy_all(&(*gol_state)->dying_cells);
+    node_destroy_all(&(*gol_state)->becoming_alive_cells);
+    free(*gol_state);
+    *gol_state = NULL;
 }
 
 void golstate_restart(GolState *gol_state) {

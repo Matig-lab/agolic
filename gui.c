@@ -53,7 +53,7 @@ Gui *gui_alloc() {
 }
 
 void gui_destroy(Gui *gui) {
-    golstate_destroy(gui->gol_state);
+    golstate_destroy(&gui->gol_state);
     SDL_DestroyWindow(gui->window);
     SDL_DestroyRenderer(gui->renderer);
     SDL_Quit();
