@@ -1,140 +1,11 @@
+#include "node.h"
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_mouse.h>
-#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
-typedef struct Node Node;
-struct Node {
-    int data;
-    Node *next;
-};
-
-Node *node_alloc(int data) {
-    Node *new_node = malloc(sizeof(*new_node));
-    new_node->next = NULL;
-    new_node->data = data;
-    return new_node;
-}
-
-int node_len(Node *head) {
-    Node *current = head;
-    int len = 0;
-    while (current) {
-        len++;
-        current = current->next;
-    }
-    return len;
-}
-
-void node_append(Node **head, int data) {
-    Node *new_node = node_alloc(data);
-    if (!*head) {
-        *head = new_node;
-        return;
-    }
-
-    Node *current = *head;
-    while (current->next) {
-        if (current->data == data)
-            return;
-        current = current->next;
-    }
-    current->next = new_node;
-}
-
-void node_insert_head(Node **head, int data) {
-    assert(false && "Do not use node_insert_head, must be reviewed");
-    Node *new_node = node_alloc(data);
-    if (!*head) {
-        *head = new_node;
-        return;
-    }
-
-    new_node->next = (*head);
-    *head = new_node;
-}
-
-void node_concat(Node *head, Node **tail) {
-    if (!tail)
-        return;
-    if (!head) {
-        head = *tail;
-        return;
-    }
-
-    Node *current = head;
-    while (current->next) {
-        current = current->next;
-    }
-    current->next = *tail;
-    *tail = NULL;
-}
-
-void node_delete_by_index(Node **head, int index) {
-    if (!*head || index < 0)
-        return;
-
-    int i = 0;
-    Node *current = *head;
-    Node *last = current;
-
-    if (i == 0) {
-        *head = current->next;
-        free(current);
-        return;
-    }
-
-    while (current->next) {
-        if (i == index) {
-            last->next = current->next;
-            free(current);
-            break;
-        }
-        last = current;
-        current = current->next;
-    }
-}
-
-void node_delete_by_data(Node **head, int data) {
-    if (!*head)
-        return;
-
-    if ((*head)->data == data) {
-        Node *temp = *head;
-        *head = (*head)->next;
-        free(temp);
-        return;
-    }
-
-    Node *current = *head;
-    Node *last = current;
-    while (current && current->data != data) {
-        last = current;
-        current = current->next;
-    }
-    last->next = current->next;
-    free(current);
-}
-
-void node_delete_all(Node **head) {
-    if (!*head)
-        return;
-
-    Node *current = *head;
-    while (current) {
-        Node *next = current->next;
-        free(current);
-        current = next;
-    }
-    *head = NULL;
-}
 
 #define GRID_LINE_LEN 100
 #define GRID_AREA pow(GRID_LINE_LEN, 2)
@@ -193,16 +64,16 @@ GolState *golstate_alloc() {
 
 void golstate_destroy(GolState *gol_state) {
     free(gol_state->grid);
-    node_delete_all(&gol_state->alive_cells);
-    node_delete_all(&gol_state->dying_cells);
-    node_delete_all(&gol_state->becoming_alive_cells);
+    node_destroy_all(&gol_state->alive_cells);
+    node_destroy_all(&gol_state->dying_cells);
+    node_destroy_all(&gol_state->becoming_alive_cells);
     free(gol_state);
 }
 
 void golstate_restart(GolState *gol_state) {
-    node_delete_all(&gol_state->alive_cells);
-    node_delete_all(&gol_state->becoming_alive_cells);
-    node_delete_all(&gol_state->dying_cells);
+    node_destroy_all(&gol_state->alive_cells);
+    node_destroy_all(&gol_state->becoming_alive_cells);
+    node_destroy_all(&gol_state->dying_cells);
     gol_state->population = 0;
     gol_state->generation = 0;
     for (int i = 0; i < GRID_AREA; i++) {
@@ -278,7 +149,7 @@ void golstate_neighbor_analysis(GolState *gol_state, int neighborhood_center,
 
     *life_in_neighborhood = 0;
     if (gather_indexes && *list_of_indexes_dst) {
-        node_delete_all(list_of_indexes_dst);
+        node_destroy_all(list_of_indexes_dst);
     }
 
     int neighborhood_center_line =
@@ -351,8 +222,6 @@ void golstate_cleanup(GolState *gol_state) {
     }
 }
 
-void cell_analysis(GolState *gol_state, int cell_index) {}
-
 void golstate_analyze_generation(GolState *gol_state) {
     // Analize current cell
     Node *current_cell = gol_state->alive_cells;
@@ -404,7 +273,7 @@ void golstate_next_generation(GolState *gol_state) {
         gol_state->population--;
         current = current->next;
     }
-    node_delete_all(&gol_state->dying_cells);
+    node_destroy_all(&gol_state->dying_cells);
 
     current = gol_state->becoming_alive_cells;
     while (current) {
@@ -413,7 +282,7 @@ void golstate_next_generation(GolState *gol_state) {
         current = current->next;
     }
     node_concat(gol_state->alive_cells, &gol_state->becoming_alive_cells);
-    node_delete_all(&gol_state->becoming_alive_cells);
+    node_destroy_all(&gol_state->becoming_alive_cells);
     golstate_cleanup(gol_state);
     gol_state->generation++;
     gol_state->is_generation_analyzed = false;
@@ -788,7 +657,6 @@ void gui_run(Gui *gui) {
 
     uint32_t current_time = SDL_GetTicks();
     uint32_t last_frame_time = current_time;
-    double cpu_time_elapsed;
     while (gui->running) {
 
         current_time = SDL_GetTicks();
@@ -797,10 +665,12 @@ void gui_run(Gui *gui) {
             continue;
 
         gui_process_events(gui);
-        double update_perf = gui_get_performance(gui_update, gui);
+        gui_update(gui);
+        // double update_perf = gui_get_performance(gui_update, gui);
 
         if (gui->there_is_something_to_draw) {
-            double render_perf = gui_get_performance(gui_render, gui);
+            gui_render(gui);
+            // double render_perf = gui_get_performance(gui_render, gui);
             // printf("Info: GUI updated in %f seconds\n", update_perf / 1000);
             // printf("Info: GUI rendered in %f seconds\n", render_perf / 1000);
         }
