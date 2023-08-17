@@ -36,8 +36,9 @@ $(TESTS_BINS): $(TESTS_DIR)/bin/% : $(TESTS_DIR)/%.c $(OBJS)
 	$(CC) -o $@ $< $(CFLAGS) $(filter-out $(BUILD_DIR)/main.o, $(OBJS)) $(LNFLAGS) -lcriterion
 
 test: $(TESTS_BINS)
-	@echo "Running tests..."
+	@echo -e "[*] Running tests..."
 	@for test in $(TESTS_BINS) ; do ./$$test ; done
+	@echo "[*] Done"
 
 test_verbose: $(TESTS_BINS)
 	for test in $(TESTS_BINS) ; do ./$$test --verbose ; done
