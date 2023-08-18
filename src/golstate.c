@@ -198,8 +198,9 @@ void golstate_analyze_generation(GolState *gol_state) {
                                        true);
         if (!golstate_cell_stays_alive(life_in_neighborhood)) {
             if (gol_state->recycled_nodes) {
-                node_append_node(&gol_state->dying_cells,
-                                 node_pop(&gol_state->recycled_nodes));
+                Node *cell_node = node_pop(&gol_state->recycled_nodes);
+                cell_node->data = current_cell->data;
+                node_append_node(&gol_state->dying_cells, cell_node);
             } else {
                 node_append_uniq(&gol_state->dying_cells, current_cell->data);
             }
@@ -221,8 +222,9 @@ void golstate_analyze_generation(GolState *gol_state) {
 
             if (golstate_dead_cell_becomes_alive(life_in_neighborhood)) {
                 if (gol_state->recycled_nodes) {
-                    node_append_node(&gol_state->becoming_alive_cells,
-                                     node_pop(&gol_state->recycled_nodes));
+                    Node *cell_node = node_pop(&gol_state->recycled_nodes);
+                    cell_node->data = current_neighborhood_cell->data;
+                    node_append_node(&gol_state->dying_cells, cell_node);
                 } else {
                     node_append_uniq(&gol_state->becoming_alive_cells,
                                      current_neighborhood_cell->data);
