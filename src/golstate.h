@@ -15,7 +15,7 @@ typedef struct {
     Node *alive_cells;
     Node *dying_cells;
     Node *becoming_alive_cells;
-    Node *recycled_nodes;
+    Node *recycled_cells;
     int population, generation;
     bool is_generation_analyzed;
 } GolState;
@@ -29,7 +29,6 @@ void golstate_destroy(GolState **gol_state);
 void golstate_restart(GolState *gol_state);
 void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index);
 void golstate_arbitrary_kill_cell(GolState *gol_state, int grid_index);
-void golstate_cleanup(GolState *gol_state);
 void golstate_analyze_generation(GolState *gol_state);
 void golstate_next_generation(GolState *gol_state);
 

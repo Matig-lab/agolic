@@ -224,7 +224,26 @@ Test(golstate, recycled_nodes) {
     golstate_next_generation(gol_state);
 
     cr_assert_eq(gol_state->population, 10);
-    cr_assert_not_null(gol_state->recycled_nodes);
+    cr_assert_not_null(gol_state->recycled_cells);
+
+    golstate_restart(gol_state);
+
+    int max_pop = 0;
+    for (int i = 0; i < GRID_SIZE / 8; i += 2) {
+        golstate_arbitrary_give_birth_cell(gol_state, i);
+    }
+
+    for (int i = 0; i < 5; i++) {
+        golstate_analyze_generation(gol_state);
+        golstate_next_generation(gol_state);
+        max_pop =
+            gol_state->population > max_pop ? gol_state->population : max_pop;
+    }
+
+    int rec_len = node_len(gol_state->recycled_cells);
+    cr_assert_eq(max_pop, rec_len,
+                 "The length of the recycled cells must be %d not %d", max_pop,
+                 rec_len);
 
     golstate_destroy(&gol_state);
 }
