@@ -110,7 +110,7 @@ Test(golstate, grid_limits) {
     golstate_arbitrary_give_birth_cell(gol_state, 2);
     golstate_analyze_generation(gol_state);
     golstate_next_generation(gol_state);
-    cr_assert_eq(gol_state->population, 2,
+    cr_expect_eq(gol_state->population, 2,
                  "X axis: northwest population should be 2 instead of %d",
                  gol_state->population);
 
@@ -121,7 +121,7 @@ Test(golstate, grid_limits) {
     golstate_arbitrary_give_birth_cell(gol_state, GRID_WIDTH - 3);
     golstate_analyze_generation(gol_state);
     golstate_next_generation(gol_state);
-    cr_assert_eq(gol_state->population, 2,
+    cr_expect_eq(gol_state->population, 2,
                  "X axis: northeast population should be 2 instead of %d",
                  gol_state->population);
 
@@ -132,7 +132,7 @@ Test(golstate, grid_limits) {
     golstate_arbitrary_give_birth_cell(gol_state, GRID_SIZE - (GRID_WIDTH - 3));
     golstate_analyze_generation(gol_state);
     golstate_next_generation(gol_state);
-    cr_assert_eq(gol_state->population, 2,
+    cr_expect_eq(gol_state->population, 2,
                  "X axis: southwest population should be 2 instead of %d",
                  gol_state->population);
 
@@ -143,7 +143,7 @@ Test(golstate, grid_limits) {
     golstate_arbitrary_give_birth_cell(gol_state, GRID_SIZE - 3);
     golstate_analyze_generation(gol_state);
     golstate_next_generation(gol_state);
-    cr_assert_eq(gol_state->population, 2,
+    cr_expect_eq(gol_state->population, 2,
                  "X axis: southeast population should be 2 instead of %d",
                  gol_state->population);
 
@@ -155,7 +155,7 @@ Test(golstate, grid_limits) {
     golstate_arbitrary_give_birth_cell(gol_state, GRID_WIDTH * 2);
     golstate_analyze_generation(gol_state);
     golstate_next_generation(gol_state);
-    cr_assert_eq(gol_state->population, 2,
+    cr_expect_eq(gol_state->population, 2,
                  "Y axis: northwest population should be 2 instead of %d",
                  gol_state->population);
 
@@ -168,7 +168,7 @@ Test(golstate, grid_limits) {
                                        (GRID_WIDTH - 1) + (GRID_WIDTH * 2));
     golstate_analyze_generation(gol_state);
     golstate_next_generation(gol_state);
-    cr_assert_eq(gol_state->population, 2,
+    cr_expect_eq(gol_state->population, 2,
                  "Y axis: northeast population should be 2 instead of %d",
                  gol_state->population);
 
@@ -179,9 +179,9 @@ Test(golstate, grid_limits) {
     golstate_arbitrary_give_birth_cell(gol_state, GRID_WIDTH * GRID_WIDTH - 3);
     golstate_analyze_generation(gol_state);
     golstate_next_generation(gol_state);
-    cr_assert_eq(gol_state->population, 2,
-                 "Y axis: southwest population should be 2 instead of %d (%d)",
-                 gol_state->population, GRID_WIDTH * GRID_WIDTH);
+    cr_expect_eq(gol_state->population, 2,
+                 "Y axis: southwest population should be 2 instead of %d",
+                 gol_state->population);
 
     // southeast
     golstate_restart(gol_state);
@@ -191,7 +191,7 @@ Test(golstate, grid_limits) {
                                        (GRID_SIZE - 1) - GRID_WIDTH * 2);
     golstate_analyze_generation(gol_state);
     golstate_next_generation(gol_state);
-    cr_assert_eq(gol_state->population, 2,
+    cr_expect_eq(gol_state->population, 2,
                  "Y axis: southeast population should be 2 instead of %d",
                  gol_state->population);
 
