@@ -5,8 +5,6 @@
 
 GolState *golstate_alloc() {
     GolState *gol_state = malloc(sizeof(*gol_state));
-    // gol_state->grid = malloc(sizeof(bool) * GRID_SIZE);
-    // gol_state->analyzed_grid_cells = malloc(sizeof(bool) * GRID_SIZE);
     for (int i = 0; i < GRID_SIZE; i++) {
         gol_state->grid[i] = false;
         gol_state->analyzed_grid_cells[i] = false;
@@ -22,8 +20,6 @@ GolState *golstate_alloc() {
 }
 
 void golstate_destroy(GolState **gol_state) {
-    // free((*gol_state)->grid);
-    // free((*gol_state)->analyzed_grid_cells);
     node_destroy_all(&(*gol_state)->alive_cells);
     node_destroy_all(&(*gol_state)->dying_cells);
     node_destroy_all(&(*gol_state)->becoming_alive_cells);
@@ -192,7 +188,7 @@ static bool golstate_dead_cell_becomes_alive(int life_in_neighborhood) {
 }
 
 void golstate_analyze_generation(GolState *gol_state) {
-    // Analize current cell
+    // Analyze current cell
     Node *current_cell = gol_state->alive_cells;
     while (current_cell) {
 
@@ -211,7 +207,7 @@ void golstate_analyze_generation(GolState *gol_state) {
             }
         }
 
-        // Analize each dead cell in neighborhood
+        // Analyze each dead cell in neighborhood
         Node *current_neighborhood_cell = neighborhood;
         while (current_neighborhood_cell) {
             if (gol_state->grid[current_neighborhood_cell->data] ||
