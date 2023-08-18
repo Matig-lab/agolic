@@ -9,16 +9,6 @@ static void check_sdl_ptr(void *sdl_ptr) {
     }
 }
 
-// static double gui_get_performance(void (*run)(Gui *), Gui *gui) {
-//     clock_t start, end;
-//     double time_elapsed = 0;
-//     start = clock();
-//     (*run)(gui);
-//     end = clock();
-//     time_elapsed = (double)end - start;
-//     return time_elapsed;
-// }
-
 Gui *gui_alloc() {
     Gui *new_gui = malloc(sizeof(*new_gui));
     SDL_Init(SDL_INIT_VIDEO);
