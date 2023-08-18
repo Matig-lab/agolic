@@ -1,4 +1,5 @@
 #include "golstate.h"
+#include "node.h"
 
 #include <stdlib.h>
 
@@ -13,6 +14,7 @@ GolState *golstate_alloc() {
     gol_state->alive_cells = NULL;
     gol_state->dying_cells = NULL;
     gol_state->becoming_alive_cells = NULL;
+    gol_state->recycled_nodes = NULL;
     gol_state->population = 0;
     gol_state->generation = 0;
     gol_state->is_generation_analyzed = false;
@@ -25,6 +27,7 @@ void golstate_destroy(GolState **gol_state) {
     node_destroy_all(&(*gol_state)->alive_cells);
     node_destroy_all(&(*gol_state)->dying_cells);
     node_destroy_all(&(*gol_state)->becoming_alive_cells);
+    node_destroy_all(&(*gol_state)->recycled_nodes);
     free(*gol_state);
     *gol_state = NULL;
 }
@@ -194,7 +197,12 @@ void golstate_analyze_generation(GolState *gol_state) {
                                        &neighborhood, &life_in_neighborhood,
                                        true);
         if (!golstate_cell_stays_alive(life_in_neighborhood)) {
-            node_append_uniq(&gol_state->dying_cells, current_cell->data);
+            if (gol_state->recycled_nodes) {
+                node_append_node(&gol_state->dying_cells,
+                                 node_pop(&gol_state->recycled_nodes));
+            } else {
+                node_append_uniq(&gol_state->dying_cells, current_cell->data);
+            }
         }
 
         // Analize each dead cell in neighborhood
@@ -212,8 +220,13 @@ void golstate_analyze_generation(GolState *gol_state) {
                                            NULL, &life_in_neighborhood, false);
 
             if (golstate_dead_cell_becomes_alive(life_in_neighborhood)) {
-                node_append_uniq(&gol_state->becoming_alive_cells,
-                            current_neighborhood_cell->data);
+                if (gol_state->recycled_nodes) {
+                    node_append_node(&gol_state->becoming_alive_cells,
+                                     node_pop(&gol_state->recycled_nodes));
+                } else {
+                    node_append_uniq(&gol_state->becoming_alive_cells,
+                                     current_neighborhood_cell->data);
+                }
                 gol_state
                     ->analyzed_grid_cells[current_neighborhood_cell->data] =
                     true;
@@ -235,7 +248,7 @@ void golstate_next_generation(GolState *gol_state) {
         gol_state->population--;
         current = current->next;
     }
-    node_destroy_all(&gol_state->dying_cells);
+    node_concat(gol_state->recycled_nodes, &gol_state->dying_cells);
 
     current = gol_state->becoming_alive_cells;
     while (current) {
@@ -244,7 +257,7 @@ void golstate_next_generation(GolState *gol_state) {
         current = current->next;
     }
     node_concat(gol_state->alive_cells, &gol_state->becoming_alive_cells);
-    node_destroy_all(&gol_state->becoming_alive_cells);
+    node_concat(gol_state->recycled_nodes, &gol_state->becoming_alive_cells);
     golstate_cleanup(gol_state);
     gol_state->generation++;
     gol_state->is_generation_analyzed = false;

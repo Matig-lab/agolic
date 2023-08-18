@@ -15,6 +15,7 @@ typedef struct {
     Node *alive_cells;
     Node *dying_cells;
     Node *becoming_alive_cells;
+    Node *recycled_nodes;
     int population, generation;
     bool is_generation_analyzed;
 } GolState;
