@@ -73,6 +73,14 @@ void node_concat(Node *head, Node **tail) {
     *tail = NULL;
 }
 
+Node *node_pop(Node **head) {
+    if (!*head)
+        return NULL;
+    Node *popped = *head;
+    *head = (*head)->next;
+    return popped;
+}
+
 void node_delete_by_index(Node **head, int index) {
     if (!*head || index < 0)
         return;

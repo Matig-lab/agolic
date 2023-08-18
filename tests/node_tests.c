@@ -47,6 +47,24 @@ Test(node, node_len) {
     node_destroy_all(&node);
 }
 
+Test(node, node_pop) {
+    Node *list = node_alloc(SAMPLE_DATA);
+    Node *popped = NULL;
+
+    for (int i = 0; i < 5; i++) {
+        node_append_uniq(&list, SAMPLE_DATA2);
+    }
+    int len = node_len(list);
+    popped = node_pop(&list);
+    int len_after_pop = node_len(list);
+    cr_assert_eq(len - 1, len_after_pop,
+                 "List after node_pop should have 1 node less");
+    cr_assert_not_null(popped, "Popped node should not be NULL");
+    cr_assert_eq(popped->data, SAMPLE_DATA,
+                 "Popped node-> should be %d instead of %d", SAMPLE_DATA,
+                 popped->data);
+}
+
 Test(node, node_append_uniq) {
     Node *node = NULL;
 
