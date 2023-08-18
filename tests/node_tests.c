@@ -12,22 +12,18 @@ Test(node, memory_management) {
     cr_assert_eq(node->data, SAMPLE_DATA,
                  "Node data with value %d, expected %d", node->data,
                  SAMPLE_DATA);
-    node_destroy(&node);
-    cr_assert_null(node, "node_destroy() should make node NULL");
+    node_destroy_all(&node);
+    cr_assert_null(node, "node_destroy_all() should make node NULL");
 
     node = node_alloc(SAMPLE_DATA2);
-    cr_expect(node != NULL, "node_alloc() after node_destroy() returned NULL");
+    cr_expect(node != NULL, "node_alloc() after node_destroy_all() returned NULL");
     cr_expect(node->data == SAMPLE_DATA2,
               "Node data (after node_destroy()) with value %d, expected %d",
               node->data, SAMPLE_DATA2);
-    node_destroy(&node);
+    node_destroy_all(&node);
 
     node = node_alloc(SAMPLE_DATA);
     node->next = node_alloc(SAMPLE_DATA);
-
-    node_destroy(&node);
-    cr_assert_not_null(node,
-                       "node_destroy() should not destroy node with childs");
 
     node_destroy_all(&node);
     cr_assert_null(node, "node_destroy_all() should make node NULL");
@@ -63,6 +59,10 @@ Test(node, node_pop) {
     cr_assert_eq(popped->data, SAMPLE_DATA,
                  "Popped node-> should be %d instead of %d", SAMPLE_DATA,
                  popped->data);
+    node_destroy_all(&list);
+    node_destroy_all(&popped);
+    cr_assert_null(list);
+    cr_assert_null(popped);
 }
 
 Test(node, node_append) {
@@ -130,9 +130,20 @@ Test(node, node_concat) {
     Node *list2 = NULL;
     node_append_uniq(&list2, SAMPLE_DATA2);
     node_append_uniq(&list2, SAMPLE_DATA3);
-    node_concat(list1, &list2);
+    node_concat(&list1, &list2);
     cr_assert_eq(node_len(list1), 3);
     cr_assert_eq(node_len(list2), 0);
+    cr_assert_null(list2);
     node_destroy_all(&list1);
     node_destroy_all(&list2);
+
+    node_append_uniq(&list2, SAMPLE_DATA);
+    node_append_uniq(&list2, SAMPLE_DATA2);
+    cr_assert_not_null(list2);
+    node_concat(&list1, &list2);
+    int len = node_len(list1);
+    cr_assert_eq(len, 2, "List 1 should have a length of 2 instead of %d", len);
+    node_destroy_all(&list1);
+    node_destroy_all(&list2);
+
 }

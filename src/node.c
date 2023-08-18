@@ -12,8 +12,6 @@ Node *node_alloc(int data) {
 }
 
 void node_destroy(Node **node) {
-    if ((*node)->next != NULL)
-        return;
     free(*node);
     *node = NULL;
 }
@@ -85,16 +83,16 @@ void node_insert_head(Node **head, int data) {
     *head = new_node;
 }
 
-void node_concat(Node *head, Node **tail) {
-    if (!tail)
+void node_concat(Node **head, Node **tail) {
+    if (!*tail)
         return;
-    if (!head) {
-        head = *tail;
+    if (!*head) {
+        *head = *tail;
         *tail = NULL;
         return;
     }
 
-    Node *current = head;
+    Node *current = *head;
     while (current->next) {
         current = current->next;
     }
@@ -107,6 +105,7 @@ Node *node_pop(Node **head) {
         return NULL;
     Node *popped = *head;
     *head = (*head)->next;
+    popped->next = NULL;
     return popped;
 }
 
@@ -164,7 +163,8 @@ void node_destroy_all(Node **head) {
     while (current) {
         Node *tmp = current;
         current = current->next;
-        node_destroy(&tmp);
+        free(tmp);
+        tmp = NULL;
     }
     *head = NULL;
 }
