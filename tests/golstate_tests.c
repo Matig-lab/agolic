@@ -1,4 +1,5 @@
 #include "../src/golstate.h"
+#include <criterion/assert.h>
 #include <criterion/criterion.h>
 #include <time.h>
 
@@ -193,6 +194,37 @@ Test(golstate, grid_limits) {
     cr_assert_eq(gol_state->population, 2,
                  "Y axis: southeast population should be 2 instead of %d",
                  gol_state->population);
+
+    golstate_destroy(&gol_state);
+}
+
+Test(golstate, recycled_nodes) {
+    GolState *gol_state = golstate_alloc();
+
+    // Add square
+    golstate_arbitrary_give_birth_cell(gol_state, 0);
+    golstate_arbitrary_give_birth_cell(gol_state, 1);
+    golstate_arbitrary_give_birth_cell(gol_state, GRID_WIDTH);
+    golstate_arbitrary_give_birth_cell(gol_state, GRID_WIDTH + 1);
+
+    // Add hive
+    golstate_arbitrary_give_birth_cell(gol_state, 5);
+    golstate_arbitrary_give_birth_cell(gol_state, 6);
+    golstate_arbitrary_give_birth_cell(gol_state, 5 + GRID_WIDTH * 2);
+    golstate_arbitrary_give_birth_cell(gol_state, 6 + GRID_WIDTH * 2);
+    golstate_arbitrary_give_birth_cell(gol_state, 4 + GRID_WIDTH);
+    golstate_arbitrary_give_birth_cell(gol_state, 7 + GRID_WIDTH);
+
+    // Isolated cell
+    golstate_arbitrary_give_birth_cell(gol_state, GRID_WIDTH - 1);
+
+    golstate_analyze_generation(gol_state);
+    cr_assert_not_null(gol_state->dying_cells);
+
+    golstate_next_generation(gol_state);
+
+    cr_assert_eq(gol_state->population, 10);
+    cr_assert_not_null(gol_state->recycled_nodes);
 
     golstate_destroy(&gol_state);
 }
