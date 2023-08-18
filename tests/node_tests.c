@@ -78,6 +78,30 @@ Test(node, node_append) {
                  SAMPLE_NODE_INSERTS, len);
     node_destroy_all(&node);
 
+    Node *new_node = node_alloc(SAMPLE_DATA);
+    node_append_node(&node, new_node);
+
+    cr_assert_eq(node, new_node);
+    cr_assert_eq(node->data, SAMPLE_DATA);
+    cr_assert_null(node->next);
+
+    node_destroy_all(&node);
+    Node *new_node1 = node_alloc(SAMPLE_DATA);
+    Node *new_node2 = node_alloc(SAMPLE_DATA2);
+
+    node_append_node(&node, new_node1);
+    node_append_node(&node, new_node2);
+
+    cr_assert_eq(node, new_node1);
+    cr_assert_eq(node->data, SAMPLE_DATA);
+
+    cr_assert_not_null(node->next);
+    cr_assert_eq(node->next, new_node2);
+    cr_assert_eq(node->next->data, SAMPLE_DATA2);
+    cr_assert_null(node->next->next);
+
+    node_destroy_all(&node);
+
     for (int i = 0; i < SAMPLE_NODE_INSERTS; i++) {
         node_append_uniq(&node, i);
     }
