@@ -38,11 +38,16 @@ $(TESTS_BINS): $(TESTS_DIR)/bin/% : $(TESTS_DIR)/%.c $(OBJS)
 
 test: $(TESTS_BINS)
 	@echo -e "[*] Running tests..."
-	@for test in $(TESTS_BINS) ; do ./$$test ; done
+	@for test in $(filter-out $(TESTS_DIR)/perf, TESTS_BINS) ; do ./$$test ; done
 	@echo "[*] Done"
 
-test_verbose: $(TESTS_BINS)
+verbose_test: $(TESTS_BINS)
 	for test in $(TESTS_BINS) ; do ./$$test --verbose ; done
+
+performance_test: $(TESTS_BINS)
+	@echo "[*] Running performance test"
+	@./$(TESTS_DIR)/bin/perf --verbose
+	@echo "[*] Done"
 
 clean:
 	rm -f $(BIN) $(OBJS)
