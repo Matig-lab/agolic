@@ -83,6 +83,13 @@ void node_insert_head(Node **head, int data) {
     *head = new_node;
 }
 
+void node_insert_head_node(Node **head, Node *node) {
+    if (!node)
+        return;
+
+    node->next = *head;
+    *head = node;
+}
 void node_concat(Node **head, Node **tail) {
     if (!*tail)
         return;
