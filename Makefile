@@ -38,15 +38,15 @@ $(TESTS_BINS): $(TESTS_DIR)/bin/% : $(TESTS_DIR)/%.c $(OBJS)
 
 test: $(TESTS_BINS)
 	@echo -e "[*] Running tests..."
-	@for test in $(filter-out $(TESTS_DIR)/bin/perf, $(TESTS_BINS)) ; do ./$$test ; done
+	@for test in $(filter-out $(TESTS_DIR)/bin/perf, $(TESTS_BINS)) ; do ./$$test --timeout 40 ; done
 	@echo "[*] Done"
 
 verbose_test: $(TESTS_BINS)
-	for test in $(TESTS_BINS) ; do ./$$test --verbose ; done
+	for test in $(TESTS_BINS) ; do ./$$test --verbose --timeout 40 ; done
 
 performance_test: $(TESTS_BINS)
 	@echo "[*] Running performance test"
-	@./$(TESTS_DIR)/bin/perf --verbose
+	@./$(TESTS_DIR)/bin/perf --verbose --timeout 40
 	@echo "[*] Done"
 
 clean:
