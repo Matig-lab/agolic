@@ -65,15 +65,25 @@ Test(node, node_pop) {
                  popped->data);
 }
 
-Test(node, node_append_uniq) {
+Test(node, node_append) {
     Node *node = NULL;
+    int len = 0;
+
+    for (int i = 0; i < SAMPLE_NODE_INSERTS; i++) {
+        node_append(&node, SAMPLE_DATA);
+    }
+    len = node_len(node);
+    cr_assert_eq(len, SAMPLE_NODE_INSERTS,
+                 "node_append() should append %d instead of %d",
+                 SAMPLE_NODE_INSERTS, len);
+    node_destroy_all(&node);
 
     for (int i = 0; i < SAMPLE_NODE_INSERTS; i++) {
         node_append_uniq(&node, i);
     }
-    int len = node_len(node);
+    len = node_len(node);
     cr_assert_eq(len, SAMPLE_NODE_INSERTS,
-                 "node_append() should append %d instead of %d",
+                 "node_append_uniq() should append %d instead of %d",
                  SAMPLE_NODE_INSERTS, len);
     node_destroy_all(&node);
 

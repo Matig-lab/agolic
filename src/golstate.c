@@ -59,7 +59,7 @@ void golstate_cleanup(GolState *gol_state) {
                 gol_state->alive_cells = current->next;
             }
             current = current->next;
-            free(tmp);
+            node_destroy(&tmp);
         } else {
             prev = current;
             current = current->next;
@@ -74,7 +74,7 @@ void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
     if (gol_state->grid[grid_index]) {
         return;
     }
-    node_append_uniq(&gol_state->alive_cells, grid_index);
+    node_append(&gol_state->alive_cells, grid_index);
     gol_state->grid[grid_index] = true;
     gol_state->population++;
 }
@@ -165,8 +165,9 @@ static void golstate_neighborhood_analysis(GolState *gol_state,
         if (i / GRID_WIDTH != current_line) {
             continue;
         }
-        if (gather_indexes)
-            node_append_uniq(list_of_indexes_dst, i);
+        if (gather_indexes && !gol_state->grid[i])
+            node_append(list_of_indexes_dst, i);
+
         if (gol_state->grid[i])
             (*life_in_neighborhood)++;
     }

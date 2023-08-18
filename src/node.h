@@ -10,6 +10,7 @@ struct Node {
 Node *node_alloc(int data);
 void node_destroy(Node **node);
 int node_len(Node *head);
+void node_append(Node **head, int data);
 void node_append_uniq(Node **head, int data);
 void node_insert_head(Node **head, int data);
 void node_concat(Node *head, Node **tail);

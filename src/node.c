@@ -28,6 +28,19 @@ int node_len(Node *head) {
     return len;
 }
 
+void node_append(Node **head, int data) {
+    if (!*head) {
+        *head = node_alloc(data);
+        return;
+    }
+
+    Node *current = *head;
+    while (current->next) {
+        current = current->next;
+    }
+    current->next = node_alloc(data);
+}
+
 void node_append_uniq(Node **head, int data) {
     if (!*head) {
         *head = node_alloc(data);
@@ -62,6 +75,7 @@ void node_concat(Node *head, Node **tail) {
         return;
     if (!head) {
         head = *tail;
+        *tail = NULL;
         return;
     }
 
