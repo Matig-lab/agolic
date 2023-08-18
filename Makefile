@@ -38,7 +38,7 @@ $(TESTS_BINS): $(TESTS_DIR)/bin/% : $(TESTS_DIR)/%.c $(OBJS)
 
 test: $(TESTS_BINS)
 	@echo -e "[*] Running tests..."
-	@for test in $(filter-out $(TESTS_DIR)/perf, TESTS_BINS) ; do ./$$test ; done
+	@for test in $(filter-out $(TESTS_DIR)/bin/perf, $(TESTS_BINS)) ; do ./$$test ; done
 	@echo "[*] Done"
 
 verbose_test: $(TESTS_BINS)
