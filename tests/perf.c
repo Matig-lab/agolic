@@ -17,7 +17,7 @@ static double golstate_get_performance(void (*run)(GolState *),
 Test(golstate, high_load) {
     GolState *gol_state = golstate_alloc();
 
-    for (int i = 0; i < GRID_SIZE; i += 7) {
+    for (int i = 0; i < GRID_SIZE; i += 2) {
         golstate_arbitrary_give_birth_cell(gol_state, i);
     }
 
@@ -27,8 +27,8 @@ Test(golstate, high_load) {
             golstate_get_performance(golstate_analyze_generation, gol_state);
         perf2 = golstate_get_performance(golstate_next_generation, gol_state);
         cr_log_info("Time elapsed on iteration #%d: %fs (Generation "
-                    "analysis: %fs; Proceed to next gen: %fs)",
-                    i + 1, perf1 + perf2, perf1, perf2);
+                    "analysis: %fs; Proceed to next gen: %fs; Population: %d)",
+                    i + 1, perf1 + perf2, perf1, perf2, gol_state->population);
     }
 
     golstate_destroy(&gol_state);
