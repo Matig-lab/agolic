@@ -16,7 +16,8 @@ Test(node, memory_management) {
     cr_assert_null(node, "node_destroy_all() should make node NULL");
 
     node = node_alloc(SAMPLE_DATA2);
-    cr_expect(node != NULL, "node_alloc() after node_destroy_all() returned NULL");
+    cr_expect(node != NULL,
+              "node_alloc() after node_destroy_all() returned NULL");
     cr_expect(node->data == SAMPLE_DATA2,
               "Node data (after node_destroy()) with value %d, expected %d",
               node->data, SAMPLE_DATA2);
@@ -145,5 +146,31 @@ Test(node, node_concat) {
     cr_assert_eq(len, 2, "List 1 should have a length of 2 instead of %d", len);
     node_destroy_all(&list1);
     node_destroy_all(&list2);
+}
 
+Test(node, node_insert_head) {
+    Node *head = NULL;
+    node_insert_head(&head, SAMPLE_DATA);
+    cr_assert_eq(head->data, SAMPLE_DATA);
+    node_destroy_all(&head);
+
+    node_insert_head(&head, SAMPLE_DATA);
+    node_insert_head(&head, SAMPLE_DATA2);
+    cr_assert_eq(head->data, SAMPLE_DATA2);
+    node_destroy_all(&head);
+}
+
+Test(node, node_insert_head_node) {
+    Node *head = NULL;
+    Node *node = node_alloc(SAMPLE_DATA);
+    node_insert_head_node(&head, node);
+    cr_assert_eq(head->data, SAMPLE_DATA);
+    node_destroy_all(&head);
+
+    head = node_alloc(SAMPLE_DATA);
+    node = node_alloc(SAMPLE_DATA2);
+
+    node_insert_head_node(&head, node);
+    cr_assert_eq(head->data, SAMPLE_DATA2);
+    node_destroy_all(&head);
 }
