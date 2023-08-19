@@ -2,18 +2,16 @@
 #include "node.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 GolState *golstate_alloc() {
     GolState *gol_state = malloc(sizeof(*gol_state));
-    for (int i = 0; i < GRID_SIZE; i++) {
-        gol_state->grid[i] = false;
-        gol_state->analyzed_grid_cells[i] = false;
-    }
+    memset(gol_state->grid, 0, sizeof(gol_state->grid));
+    memset(gol_state->analyzed_grid_cells, 0, sizeof(gol_state->grid));
     gol_state->alive_cells = NULL;
     gol_state->dying_cells = NULL;
     gol_state->becoming_alive_cells = NULL;
     gol_state->recycled_cells = NULL;
-    gol_state->analyzed_cells = NULL;
     gol_state->population = 0;
     gol_state->generation = 0;
     gol_state->is_generation_analyzed = false;
@@ -37,10 +35,8 @@ void golstate_restart(GolState *gol_state) {
     gol_state->population = 0;
     gol_state->generation = 0;
     gol_state->is_generation_analyzed = false;
-    for (int i = 0; i < GRID_SIZE; i++) {
-        gol_state->grid[i] = false;
-        gol_state->analyzed_grid_cells[i] = false;
-    }
+    memset(gol_state->grid, 0, sizeof(gol_state->grid));
+    memset(gol_state->analyzed_grid_cells, 0, sizeof(gol_state->grid));
 }
 
 static void golstate_insert_cell(GolState *gol_state, Node **cell_ubication,
@@ -55,11 +51,7 @@ static void golstate_insert_cell(GolState *gol_state, Node **cell_ubication,
 }
 
 static void golstate_cleanup_analyzed_cells(GolState *gol_state) {
-    Node *analyzed_cell = node_pop(&gol_state->analyzed_cells);
-    while (analyzed_cell) {
-        gol_state->analyzed_grid_cells[analyzed_cell->data] = false;
-        analyzed_cell = node_pop(&gol_state->analyzed_cells);
-    }
+    memset(gol_state->analyzed_grid_cells, 0, sizeof(gol_state->analyzed_grid_cells));
 }
 
 static void golstate_cleanup_alive_cells(GolState *gol_state) {
@@ -184,8 +176,6 @@ static void golstate_neighborhood_analysis(GolState *gol_state,
             (*life_in_neighborhood)++;
     }
     gol_state->analyzed_grid_cells[neighborhood_center] = true;
-    golstate_insert_cell(gol_state, &gol_state->analyzed_cells,
-                         neighborhood_center);
 }
 
 static bool golstate_cell_stays_alive(int life_in_neighborhood) {
