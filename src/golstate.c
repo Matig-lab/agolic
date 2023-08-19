@@ -13,6 +13,7 @@ GolState *golstate_alloc() {
     gol_state->dying_cells = NULL;
     gol_state->becoming_alive_cells = NULL;
     gol_state->recycled_cells = NULL;
+    gol_state->analyzed_cells = NULL;
     gol_state->population = 0;
     gol_state->generation = 0;
     gol_state->is_generation_analyzed = false;
@@ -42,9 +43,22 @@ void golstate_restart(GolState *gol_state) {
     }
 }
 
+static void golstate_insert_cell(GolState *gol_state, Node **cell_ubication,
+                                 int grid_index) {
+    if (gol_state->recycled_cells) {
+        Node *new_cell = node_pop(&gol_state->recycled_cells);
+        new_cell->data = grid_index;
+        node_insert_head_node(cell_ubication, new_cell);
+    } else {
+        node_insert_head(cell_ubication, grid_index);
+    }
+}
+
 static void golstate_cleanup_analyzed_cells(GolState *gol_state) {
-    for (int i = 0; i < GRID_SIZE; i++) {
-        gol_state->analyzed_grid_cells[i] = false;
+    Node *analyzed_cell = node_pop(&gol_state->analyzed_cells);
+    while (analyzed_cell) {
+        gol_state->analyzed_grid_cells[analyzed_cell->data] = false;
+        analyzed_cell = node_pop(&gol_state->analyzed_cells);
     }
 }
 
@@ -72,14 +86,7 @@ void golstate_arbitrary_give_birth_cell(GolState *gol_state, int grid_index) {
         gol_state->grid[grid_index]) {
         return;
     }
-
-    if (gol_state->recycled_cells) {
-        Node *new_cell = node_pop(&gol_state->recycled_cells);
-        new_cell->data = grid_index;
-        node_insert_head_node(&gol_state->alive_cells, new_cell);
-    } else {
-        node_insert_head(&gol_state->alive_cells, grid_index);
-    }
+    golstate_insert_cell(gol_state, &gol_state->alive_cells, grid_index);
     gol_state->grid[grid_index] = true;
     gol_state->population++;
 }
@@ -176,6 +183,9 @@ static void golstate_neighborhood_analysis(GolState *gol_state,
         if (gol_state->grid[i])
             (*life_in_neighborhood)++;
     }
+    gol_state->analyzed_grid_cells[neighborhood_center] = true;
+    golstate_insert_cell(gol_state, &gol_state->analyzed_cells,
+                         neighborhood_center);
 }
 
 static bool golstate_cell_stays_alive(int life_in_neighborhood) {
@@ -198,13 +208,8 @@ void golstate_analyze_generation(GolState *gol_state) {
                                        &neighborhood, &life_in_neighborhood,
                                        true);
         if (!golstate_cell_stays_alive(life_in_neighborhood)) {
-            if (gol_state->recycled_cells) {
-                Node *cell_node = node_pop(&gol_state->recycled_cells);
-                cell_node->data = current_cell->data;
-                node_insert_head_node(&gol_state->dying_cells, cell_node);
-            } else {
-                node_append_uniq(&gol_state->dying_cells, current_cell->data);
-            }
+            golstate_insert_cell(gol_state, &gol_state->dying_cells,
+                                 current_cell->data);
         }
 
         // Analyze each dead cell in neighborhood
@@ -222,15 +227,9 @@ void golstate_analyze_generation(GolState *gol_state) {
                                            NULL, &life_in_neighborhood, false);
 
             if (golstate_dead_cell_becomes_alive(life_in_neighborhood)) {
-                if (gol_state->recycled_cells) {
-                    Node *cell_node = node_pop(&gol_state->recycled_cells);
-                    cell_node->data = current_neighborhood_cell->data;
-                    node_insert_head_node(&gol_state->becoming_alive_cells,
-                                     cell_node);
-                } else {
-                    node_append_uniq(&gol_state->becoming_alive_cells,
+                golstate_insert_cell(gol_state,
+                                     &gol_state->becoming_alive_cells,
                                      current_neighborhood_cell->data);
-                }
                 gol_state
                     ->analyzed_grid_cells[current_neighborhood_cell->data] =
                     true;
