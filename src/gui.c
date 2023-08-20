@@ -320,10 +320,6 @@ static void gui_render(Gui *gui) {
 }
 
 void gui_run(Gui *gui) {
-
-    Point p = {150, 150};
-    gui->gol_state->grid[point2d_to_grid1d(p, GRID_WIDTH, GRID_SIZE)] = true;
-
     uint32_t current_time = SDL_GetTicks();
     uint32_t last_frame_time = current_time;
     while (gui->running) {
@@ -335,13 +331,9 @@ void gui_run(Gui *gui) {
 
         gui_process_events(gui);
         gui_update(gui);
-        // double update_perf = gui_get_performance(gui_update, gui);
 
         if (gui->there_is_something_to_draw) {
             gui_render(gui);
-            // double render_perf = gui_get_performance(gui_render, gui);
-            // printf("Info: GUI updated in %f seconds\n", update_perf / 1000);
-            // printf("Info: GUI rendered in %f seconds\n", render_perf / 1000);
         }
         SDL_Delay(10);
     }
