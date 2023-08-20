@@ -6,7 +6,7 @@
 
 #include <stdbool.h>
 
-#define GRID_WIDTH 500
+#define GRID_WIDTH 2000
 #define GRID_SIZE GRID_WIDTH *GRID_WIDTH
 
 typedef struct {
